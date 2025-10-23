@@ -1,7 +1,7 @@
-package software.ulpgc.es.practicacn1.architecture.control;
+package software.ulpgc.es.practicacn1.domain.control;
 
-import software.ulpgc.es.practicacn1.architecture.Request;
-import software.ulpgc.es.practicacn1.architecture.Response;
+import software.ulpgc.es.practicacn1.domain.web.Request;
+import software.ulpgc.es.practicacn1.domain.web.Response;
 
 import java.util.HashMap;
 import java.util.Map;

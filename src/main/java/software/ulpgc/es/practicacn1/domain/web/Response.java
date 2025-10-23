@@ -1,4 +1,4 @@
-package software.ulpgc.es.practicacn1.domain.control;
+package software.ulpgc.es.practicacn1.domain.web;
 
 import java.util.Optional;
 

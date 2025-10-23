@@ -1,10 +1,14 @@
-package software.ulpgc.es.practicacn1.domain;
+package software.ulpgc.es.practicacn1.domain.repository;
 
-import java.awt.print.Book;
+
+import software.ulpgc.es.practicacn1.domain.model.Book;
+
+import java.util.List;
 
 public interface BookRepository {
+    List<Book> getAllBooks();
     Book getBook(String isbn);
-    void saveBook(Book book);
-    void deleteBook(String isbn);
-    void updateBook(Book book);
+    boolean saveBook(Book book);
+    Book deleteBook(String isbn);
+    Book updateBook(Book book);
 }

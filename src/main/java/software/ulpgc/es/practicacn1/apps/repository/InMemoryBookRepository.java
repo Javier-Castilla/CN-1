@@ -1,4 +1,4 @@
-package software.ulpgc.es.practicacn1.apps;
+package software.ulpgc.es.practicacn1.apps.repository;
 
 import software.ulpgc.es.practicacn1.domain.model.Book;
 import software.ulpgc.es.practicacn1.domain.repository.BookRepository;
@@ -21,22 +21,21 @@ public class InMemoryBookRepository implements BookRepository {
 
     @Override
     public Book getBook(String isbn) {
-        return null;
+        return this.books.get(isbn);
     }
 
     @Override
     public boolean saveBook(Book book) {
-        return true;
+        return this.books.put(book.isbn(), book) != null;
     }
 
     @Override
     public Book deleteBook(String isbn) {
-
-        return null;
+        return this.books.remove(isbn);
     }
 
     @Override
-    public void updateBook(Book book) {
-
+    public Book updateBook(Book book) {
+        return this.books.put(book.isbn(), book);
     }
 }
