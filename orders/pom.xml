@@ -1,26 +1,34 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
-        <relativePath/>
+        <version>3.5.7</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
-
     <groupId>software.ulpgc.es</groupId>
-    <artifactId>practica-cn-1</artifactId>
+    <artifactId>orders</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>practica-cn-1</name>
-    <description>practica-cn-1</description>
-
+    <name>orders</name>
+    <description>orders</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
     <properties>
         <java.version>17</java.version>
     </properties>
-
     <dependencies>
         <!-- Spring Boot Web -->
         <dependency>
@@ -47,19 +55,9 @@
         </dependency>
 
         <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>books</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>orders</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>customers</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.11.0</version>
         </dependency>
     </dependencies>
 
