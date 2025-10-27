@@ -21,6 +21,7 @@
 
 <h2 align="center">Estrcutura</h2>
 El repositorio contiene el código de la API implementada en Java SpringBoot correspondiente a dos tipos de arquitecturas, acoplada y desacoplada. Para ello, se han separado los diferentes servicios en 3 módulos, siendo el proyecto principal el encargado de orquestrarlos en la arquitectura acoplada (monolito). En el caso de la arquitectura desacoplada (microservicios), cada módulo se ejecuta dentro de su Docker correspondiente.
+
 - root
   - books
     - src
