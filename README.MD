@@ -32,4 +32,6 @@ El repositorio contiene el código de la API implementada en Java SpringBoot cor
   - orders
     - src
     - ...
-  - src
+  - monolith
+    - src
+    - ...
