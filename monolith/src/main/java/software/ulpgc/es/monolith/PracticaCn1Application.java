@@ -1,24 +1,20 @@
-package software.ulpgc.es.practicacn1;
+package software.ulpgc.es.monolith;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import software.ulpgc.es.books.app.repository.PostgreSQLBookRepository;
 import software.ulpgc.es.books.domain.control.CommandFactory;
 import software.ulpgc.es.books.domain.repository.BookRepository;
 import software.ulpgc.es.customers.app.repository.PostgreSQLCustomerRepository;
 import software.ulpgc.es.customers.domain.repository.CustomerRepository;
-import software.ulpgc.es.orders.app.io.books.BookLoader;
-import software.ulpgc.es.orders.app.io.books.BooksBookDeserializer;
-import software.ulpgc.es.orders.app.io.books.BooksBookReader;
-import software.ulpgc.es.orders.app.io.customer.CustomerLoader;
-import software.ulpgc.es.orders.app.io.customer.CustomersCustomerDeserializer;
-import software.ulpgc.es.orders.app.io.customer.CustomersCustomerReader;
-import software.ulpgc.es.orders.app.repository.PostgreSQLOrderRepository;
+import software.ulpgc.es.orders.app.io.repository.PostgreSQLOrderRepository;
 import software.ulpgc.es.orders.domain.repository.OrderRepository;
 
-@SpringBootApplication(scanBasePackages = "software.ulpgc.es.practicacn1")
+@SpringBootApplication(scanBasePackages = {"software.ulpgc.es.monolith", "software.ulpgc.es.books", "software.ulpgc.es.customers", "software.ulpgc.es.orders"})
+@Profile("monolith")
 public class PracticaCn1Application {
     @Value("${DB_TYPE}")
     private String dbType;
@@ -38,12 +34,6 @@ public class PracticaCn1Application {
     @Value("${DB_PASSWORD}")
     private String dbPassword;
 
-    @Value("${CUSTOMERS_URL}")
-    private String customersURL;
-
-    @Value("${BOOKS_URL}")
-    private String booksURL;
-
     public static void main(String[] args) {
         SpringApplication.run(PracticaCn1Application.class, args);
     }
@@ -53,8 +43,8 @@ public class PracticaCn1Application {
     }
 
     @Bean
-    public BookRepository bookRepository() {
-        return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
+    public OrderRepository orderRepository() {
+        return new PostgreSQLOrderRepository(buildJdbcUrl(), dbUsername, dbPassword);
     }
 
     @Bean
@@ -63,16 +53,8 @@ public class PracticaCn1Application {
     }
 
     @Bean
-    public OrderRepository orderRepository() {
-        return new PostgreSQLOrderRepository(buildJdbcUrl(), dbUsername, dbPassword, booksURL, customersURL, createBookLoader(), createCustomerLoader());
-    }
-
-    private CustomerLoader createCustomerLoader() {
-        return new CustomerLoader(new CustomersCustomerReader(), new CustomersCustomerDeserializer());
-    }
-
-    private BookLoader createBookLoader() {
-        return new BookLoader(new BooksBookReader(), new BooksBookDeserializer());
+    public BookRepository bookRepository() {
+        return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
     }
 
     @Bean

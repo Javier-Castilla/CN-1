@@ -32,7 +32,7 @@ public class OrderController {
 
     @PutMapping("/{orderId}")
     public ResponseEntity<Order> updateOrder(@PathVariable int orderId, @RequestBody Order order) {
-        Order updatedOrder = orderRepository.updateOrder(new Order(orderId, order.customer(), order.date(), order.items()));
+        Order updatedOrder = orderRepository.updateOrder(new Order(orderId, order.customerId(), order.date(), order.items()));
         if (updatedOrder != null) {
             return ResponseEntity.ok(updatedOrder);
         }

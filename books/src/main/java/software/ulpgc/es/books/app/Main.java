@@ -4,11 +4,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import software.ulpgc.es.books.app.repository.PostgreSQLBookRepository;
 import software.ulpgc.es.books.domain.control.CommandFactory;
 import software.ulpgc.es.books.domain.repository.BookRepository;
 
 @SpringBootApplication(scanBasePackages = "software.ulpgc.es.books")
+@Profile("books")
 public class Main {
     @Value("${DB_TYPE}")
     private String dbType;

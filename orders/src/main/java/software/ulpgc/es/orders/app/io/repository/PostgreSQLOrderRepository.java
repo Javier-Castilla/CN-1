@@ -1,15 +1,6 @@
-package software.ulpgc.es.orders.app.repository;
+package software.ulpgc.es.orders.app.io.repository;
 
-import software.ulpgc.es.orders.adapters.JSONBooksAdapter;
-import software.ulpgc.es.orders.adapters.JSONCustomerAdapter;
-import software.ulpgc.es.orders.app.io.books.BookLoader;
-import software.ulpgc.es.orders.app.io.customer.CustomerLoader;
-import software.ulpgc.es.orders.domain.model.Book;
-import software.ulpgc.es.orders.domain.model.Customer;
-import software.ulpgc.es.orders.domain.model.Order;
-import software.ulpgc.es.orders.domain.model.OrderItem;
-import software.ulpgc.es.orders.domain.pojos.BooksGetResponse;
-import software.ulpgc.es.orders.domain.pojos.CustomersGetResponse;
+import software.ulpgc.es.orders.domain.model.*;
 import software.ulpgc.es.orders.domain.repository.OrderRepository;
 
 import java.sql.*;
@@ -21,19 +12,11 @@ public class PostgreSQLOrderRepository implements OrderRepository {
     private final String url;
     private final String user;
     private final String password;
-    private final String booksURL;
-    private final String customersURL;
-    private final BookLoader bookLoader;
-    private final CustomerLoader customerLoader;
 
-    public PostgreSQLOrderRepository(String url, String user, String password, String booksURL, String customersURL, BookLoader bookLoader, CustomerLoader customerLoader) {
+    public PostgreSQLOrderRepository(String url, String user, String password) {
         this.url = url;
-        this.booksURL = booksURL;
-        this.customersURL = customersURL;
         this.user = user;
         this.password = password;
-        this.bookLoader = bookLoader;
-        this.customerLoader = customerLoader;
         initialize();
     }
 
@@ -53,7 +36,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         String sqlItems = """
             CREATE TABLE IF NOT EXISTS order_items (
                 order_id INT NOT NULL REFERENCES orders(id),
-                book_isbn VARCHAR(13) NOT NULL REFERENCES books(isbn),
+                book_isbn VARCHAR(20) NOT NULL REFERENCES books(isbn),
                 quantity INT NOT NULL,
                 PRIMARY KEY (order_id, book_isbn)
             );
@@ -63,24 +46,23 @@ public class PostgreSQLOrderRepository implements OrderRepository {
              Statement stmt = conn.createStatement()) {
             stmt.execute(sqlOrders);
             stmt.execute(sqlItems);
-            System.out.println("Table 'orders' verified or created correctly.");
+            System.out.println("Tables 'orders' and 'order_items' verified or created correctly.");
         } catch (SQLException e) {
-            System.err.println("Error while initializing table 'orders': " + e.getMessage());
+            System.err.println("Error initializing tables: " + e.getMessage());
         }
     }
 
-    private List<OrderItem> getOrderItems(int orderId, Connection conn) throws Exception {
-        String sqlItems = "SELECT * FROM order_items WHERE order_id = ?";
+    private List<OrderItem> getOrderItems(int orderId, Connection conn) throws SQLException {
+        String sqlItems = "SELECT book_isbn, quantity FROM order_items WHERE order_id = ?";
         List<OrderItem> items = new ArrayList<>();
 
         try (PreparedStatement pstmt = conn.prepareStatement(sqlItems)) {
             pstmt.setInt(1, orderId);
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                String isbn = rs.getString("book_isbn");
+                String isbnStr = rs.getString("book_isbn");
                 int quantity = rs.getInt("quantity");
-                Book book = JSONBooksAdapter.adapt((BooksGetResponse) this.bookLoader.load(this.booksURL + isbn));
-                items.add(new OrderItem(book, quantity));
+                items.add(new OrderItem(new ISBN(isbnStr), quantity));
             }
         }
 
@@ -89,24 +71,30 @@ public class PostgreSQLOrderRepository implements OrderRepository {
 
     @Override
     public Order getOrder(int id) {
-        String sqlOrder = "SELECT * FROM orders WHERE id = ?";
+        String sql = """
+            SELECT id AS order_id, customer_id, order_date
+            FROM orders
+            WHERE id = ?
+        """;
+
         try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sqlOrder)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, id);
             ResultSet rs = pstmt.executeQuery();
+
             if (!rs.next()) return null;
 
             int customerId = rs.getInt("customer_id");
-            LocalDateTime date = rs.getTimestamp("order_date").toLocalDateTime();
-            Customer customer = JSONCustomerAdapter.adapt((CustomersGetResponse) this.customerLoader.load(this.customersURL + customerId));
+            Timestamp ts = rs.getTimestamp("order_date");
+            LocalDateTime date = ts != null ? ts.toLocalDateTime() : LocalDateTime.now();
+
             List<OrderItem> items = getOrderItems(id, conn);
 
-            return new Order(id, customer, date, items);
+            return new Order(id, customerId, date, items);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching order with id " + id, e);
         }
     }
 
@@ -161,7 +149,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
 
             int orderId;
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertOrder)) {
-                pstmt.setInt(1, order.customer().id());
+                pstmt.setInt(1, order.customerId());
                 pstmt.setTimestamp(2, Timestamp.valueOf(order.date()));
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) orderId = rs.getInt("id");
@@ -174,7 +162,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertItem)) {
                 for (OrderItem item : order.items()) {
                     pstmt.setInt(1, orderId);
-                    pstmt.setString(2, item.book().isbn());
+                    pstmt.setString(2, item.isbn().getValue());
                     pstmt.setInt(3, item.quantity());
                     pstmt.addBatch();
                 }
@@ -182,7 +170,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             }
 
             conn.commit();
-            return new Order(orderId, order.customer(), order.date(), order.items());
+            return new Order(orderId, order.customerId(), order.date(), order.items());
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -200,7 +188,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             conn.setAutoCommit(false);
 
             try (PreparedStatement pstmt = conn.prepareStatement(sqlUpdateOrder)) {
-                pstmt.setInt(1, order.customer().id());
+                pstmt.setInt(1, order.customerId());
                 pstmt.setTimestamp(2, Timestamp.valueOf(order.date()));
                 pstmt.setInt(3, order.id());
                 int affected = pstmt.executeUpdate();
@@ -218,7 +206,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertItem)) {
                 for (OrderItem item : order.items()) {
                     pstmt.setInt(1, order.id());
-                    pstmt.setString(2, item.book().isbn());
+                    pstmt.setString(2, item.isbn().getValue());
                     pstmt.setInt(3, item.quantity());
                     pstmt.addBatch();
                 }

@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import software.ulpgc.es.customers.app.repository.PostgreSQLCustomerRepository;
 import software.ulpgc.es.customers.domain.repository.CustomerRepository;
 
 @SpringBootApplication(scanBasePackages = "software.ulpgc.es.customers")
+@Profile("customers")
 public class Main {
     @Value("${DB_TYPE}")
     private String dbType;

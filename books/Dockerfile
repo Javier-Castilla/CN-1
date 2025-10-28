@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY target/*.jar app.jar
 
-ENV SERVER_PORT=8080
-EXPOSE 8080
+ENV SERVER_PORT=8081
+EXPOSE 8081
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

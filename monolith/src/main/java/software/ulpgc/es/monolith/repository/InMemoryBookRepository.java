@@ -1,4 +1,4 @@
-package software.ulpgc.es.practicacn1.repository;
+package software.ulpgc.es.monolith.repository;
 
 import software.ulpgc.es.books.domain.repository.BookRepository;
 import software.ulpgc.es.books.domain.model.Book;

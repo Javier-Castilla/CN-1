@@ -1,4 +1,4 @@
-package software.ulpgc.es.practicacn1.domain.web;
+package software.ulpgc.es.monolith.domain.web;
 
 import java.util.Optional;
 
