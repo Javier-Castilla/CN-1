@@ -2,48 +2,57 @@ package software.ulpgc.es.monolith.app.controllers;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import software.ulpgc.es.monolith.app.Main;
 import software.ulpgc.es.monolith.domain.model.Order;
-import software.ulpgc.es.monolith.domain.repository.OrderRepository;
+import software.ulpgc.es.monolith.domain.control.CommandFactory;
+import software.ulpgc.es.monolith.domain.control.orders.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
-    private final OrderRepository orderRepository;
 
-    public OrderController(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
+    private final CommandFactory commandFactory;
+
+    public OrderController(CommandFactory commandFactory) {
+        this.commandFactory = commandFactory;
     }
 
     @GetMapping
     public List<Order> getAllOrders() {
-        return this.orderRepository.getAllOrders();
-    }
-
-    @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrder(@PathVariable int orderId) {
-        Order order = orderRepository.getOrder(orderId);
-        if (order != null) {
-            return ResponseEntity.ok(order);
-        }
-        return ResponseEntity.notFound().build();
+        final List<Order>[] resultHolder = new List[1];
+        GetAllOrdersCommand.Output output = result -> resultHolder[0] = result;
+        commandFactory.with(Main.NoInput.INSTANCE, output)
+                .build("getOrders")
+                .execute();
+        return resultHolder[0];
     }
 
     @PutMapping("/{orderId}")
     public ResponseEntity<Order> updateOrder(@PathVariable int orderId, @RequestBody Order order) {
-        Order updatedOrder = orderRepository.updateOrder(new Order(orderId, order.customerId(), order.date(), order.items()));
-        if (updatedOrder != null) {
-            return ResponseEntity.ok(updatedOrder);
+        final Order[] resultHolder = new Order[1];
+        UpdateOrderCommand.Input input = () -> new Order(orderId, order.customerId(), order.date(), order.items());
+        UpdateOrderCommand.Output output = result -> resultHolder[0] = result;
+        commandFactory.with(input, output)
+                .build("updateOrder")
+                .execute();
+        if (resultHolder[0] != null) {
+            return ResponseEntity.ok(resultHolder[0]);
         }
         return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{orderId}")
     public ResponseEntity<Order> cancelOrder(@PathVariable int orderId) {
-        Order cancelled = orderRepository.cancelOrder(orderId);
-        if (cancelled != null) {
-            return ResponseEntity.ok(cancelled);
+        final Order[] resultHolder = new Order[1];
+        DeleteOrderCommand.Input input = () -> orderId;
+        DeleteOrderCommand.Output output = result -> resultHolder[0] = result;
+        commandFactory.with(input, output)
+                .build("cancelOrder")
+                .execute();
+        if (resultHolder[0] != null) {
+            return ResponseEntity.ok(resultHolder[0]);
         }
         return ResponseEntity.notFound().build();
     }

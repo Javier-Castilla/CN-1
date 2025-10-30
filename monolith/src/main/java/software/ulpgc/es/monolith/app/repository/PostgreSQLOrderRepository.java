@@ -3,7 +3,7 @@ package software.ulpgc.es.monolith.app.repository;
 import software.ulpgc.es.monolith.domain.model.ISBN;
 import software.ulpgc.es.monolith.domain.model.Order;
 import software.ulpgc.es.monolith.domain.model.OrderItem;
-import software.ulpgc.es.monolith.domain.repository.OrderRepository;
+import software.ulpgc.es.monolith.domain.io.repository.OrderRepository;
 
 import java.sql.*;
 import java.time.LocalDateTime;

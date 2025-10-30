@@ -1,6 +1,6 @@
 package software.ulpgc.es.monolith.app.repository;
 
-import software.ulpgc.es.monolith.domain.repository.BookRepository;
+import software.ulpgc.es.monolith.domain.io.repository.BookRepository;
 import software.ulpgc.es.monolith.domain.model.Book;
 
 import java.util.HashMap;

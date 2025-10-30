@@ -1,4 +1,4 @@
-package software.ulpgc.es.monolith.domain.repository;
+package software.ulpgc.es.monolith.domain.io.repository;
 
 import software.ulpgc.es.monolith.domain.model.Customer;
 

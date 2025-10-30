@@ -1,7 +1,7 @@
 package software.ulpgc.es.monolith.app.repository;
 
 import software.ulpgc.es.monolith.domain.model.Customer;
-import software.ulpgc.es.monolith.domain.repository.CustomerRepository;
+import software.ulpgc.es.monolith.domain.io.repository.CustomerRepository;
 
 import java.sql.*;
 import java.util.ArrayList;

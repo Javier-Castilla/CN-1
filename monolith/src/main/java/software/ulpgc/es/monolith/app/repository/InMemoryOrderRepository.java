@@ -1,7 +1,7 @@
 package software.ulpgc.es.monolith.app.repository;
 
 import software.ulpgc.es.monolith.domain.model.Order;
-import software.ulpgc.es.monolith.domain.repository.OrderRepository;
+import software.ulpgc.es.monolith.domain.io.repository.OrderRepository;
 
 import java.util.HashMap;
 import java.util.List;
