@@ -36,6 +36,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -43,24 +50,12 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Dependencias a los otros módulos -->
         <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>books</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version> <!-- o la versión más reciente -->
         </dependency>
 
-        <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>customers</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-
-        <dependency>
-            <groupId>software.ulpgc.es</groupId>
-            <artifactId>orders</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -76,6 +71,17 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>16</source>
+                    <target>16</target>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
         </plugins>
     </build>

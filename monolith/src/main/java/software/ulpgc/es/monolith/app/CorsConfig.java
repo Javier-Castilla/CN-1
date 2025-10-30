@@ -1,4 +1,4 @@
-package software.ulpgc.es.monolith;
+package software.ulpgc.es.monolith.app;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

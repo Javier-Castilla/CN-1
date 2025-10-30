@@ -1,19 +1,16 @@
-package software.ulpgc.es.monolith;
+package software.ulpgc.es.monolith.app;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
-import software.ulpgc.es.books.app.repository.PostgreSQLBookRepository;
-import software.ulpgc.es.books.domain.control.CommandFactory;
-import software.ulpgc.es.books.domain.repository.BookRepository;
-import software.ulpgc.es.customers.app.repository.PostgreSQLCustomerRepository;
-import software.ulpgc.es.customers.domain.repository.CustomerRepository;
-import software.ulpgc.es.orders.app.io.repository.PostgreSQLOrderRepository;
-import software.ulpgc.es.orders.domain.repository.OrderRepository;
+import software.ulpgc.es.monolith.app.repository.*;
+import software.ulpgc.es.monolith.domain.repository.BookRepository;
+import software.ulpgc.es.monolith.domain.repository.CustomerRepository;
+import software.ulpgc.es.monolith.domain.repository.OrderRepository;
 
-@SpringBootApplication(scanBasePackages = {"software.ulpgc.es.monolith", "software.ulpgc.es.books", "software.ulpgc.es.customers", "software.ulpgc.es.orders"})
+@SpringBootApplication(scanBasePackages = "software.ulpgc.es.monolith")
 @Profile("monolith")
 public class PracticaCn1Application {
     @Value("${DB_TYPE}")
@@ -44,21 +41,19 @@ public class PracticaCn1Application {
 
     @Bean
     public OrderRepository orderRepository() {
-        return new PostgreSQLOrderRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        // return new PostgreSQLOrderRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        return new InMemoryOrderRepository();
     }
 
     @Bean
     public CustomerRepository customerRepository() {
-        return new PostgreSQLCustomerRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        // return new PostgreSQLCustomerRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        return new InMemoryCustomerRepository();
     }
 
     @Bean
     public BookRepository bookRepository() {
-        return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
-    }
-
-    @Bean
-    public CommandFactory commandFactory() {
-        return new CommandFactory();
+        // return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        return new InMemoryBookRepository();
     }
 }

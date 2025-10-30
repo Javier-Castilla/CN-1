@@ -1,7 +1,7 @@
-package software.ulpgc.es.monolith.repository;
+package software.ulpgc.es.monolith.app.repository;
 
-import software.ulpgc.es.books.domain.repository.BookRepository;
-import software.ulpgc.es.books.domain.model.Book;
+import software.ulpgc.es.monolith.domain.repository.BookRepository;
+import software.ulpgc.es.monolith.domain.model.Book;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +16,7 @@ public class InMemoryBookRepository implements BookRepository {
 
     @Override
     public List<Book> getAllBooks() {
-        return List.of();
+        return this.books.values().stream().toList();
     }
 
     @Override
@@ -26,7 +26,8 @@ public class InMemoryBookRepository implements BookRepository {
 
     @Override
     public boolean saveBook(Book book) {
-        return this.books.put(book.isbn(), book) != null;
+        if (this.books.containsKey(book.isbn())) return false;
+        return this.books.put(book.isbn(), book) == null;
     }
 
     @Override
