@@ -1,7 +1,7 @@
-package software.ulpgc.es.customers.app.repository;
+package software.ulpgc.es.customers.app.io.repository;
 
 import software.ulpgc.es.customers.domain.model.Customer;
-import software.ulpgc.es.customers.domain.repository.CustomerRepository;
+import software.ulpgc.es.customers.domain.io.repository.CustomerRepository;
 
 import java.sql.*;
 import java.util.ArrayList;

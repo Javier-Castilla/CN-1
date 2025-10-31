@@ -1,7 +1,7 @@
-package software.ulpgc.es.books.app.repository;
+package software.ulpgc.es.books.app.io.repository;
 
 import software.ulpgc.es.books.domain.model.Book;
-import software.ulpgc.es.books.domain.repository.BookRepository;
+import software.ulpgc.es.books.domain.io.repository.BookRepository;
 
 import java.sql.*;
 import java.util.ArrayList;

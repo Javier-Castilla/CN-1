@@ -2,7 +2,7 @@ package software.ulpgc.es.customers.app.controllers;
 
 import org.springframework.web.bind.annotation.*;
 import software.ulpgc.es.customers.domain.model.Customer;
-import software.ulpgc.es.customers.domain.repository.CustomerRepository;
+import software.ulpgc.es.customers.domain.io.repository.CustomerRepository;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package software.ulpgc.es.customers.domain.repository;
+package software.ulpgc.es.customers.domain.io.repository;
 
 import software.ulpgc.es.customers.domain.model.Customer;
 

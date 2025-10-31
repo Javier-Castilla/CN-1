@@ -1,4 +1,4 @@
-package software.ulpgc.es.books.domain.repository;
+package software.ulpgc.es.books.domain.io.repository;
 
 
 import software.ulpgc.es.books.domain.model.Book;
