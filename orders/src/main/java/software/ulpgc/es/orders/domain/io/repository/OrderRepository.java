@@ -1,4 +1,4 @@
-package software.ulpgc.es.orders.domain.repository;
+package software.ulpgc.es.orders.domain.io.repository;
 
 import software.ulpgc.es.orders.domain.model.Order;
 

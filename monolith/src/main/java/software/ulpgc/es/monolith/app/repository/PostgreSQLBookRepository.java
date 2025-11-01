@@ -2,6 +2,7 @@ package software.ulpgc.es.monolith.app.repository;
 
 import software.ulpgc.es.monolith.domain.model.Book;
 import software.ulpgc.es.monolith.domain.io.repository.BookRepository;
+import software.ulpgc.es.monolith.domain.model.ISBN;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -30,7 +31,8 @@ public class PostgreSQLBookRepository implements BookRepository {
                 isbn VARCHAR(13) PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 author VARCHAR(255) NOT NULL,
-                publisher VARCHAR(255)
+                publisher VARCHAR(255),
+                stock INT NOT NULL
             );
         """;
 
@@ -56,10 +58,11 @@ public class PostgreSQLBookRepository implements BookRepository {
 
             while (rs.next()) {
                 books.add(new Book(
-                        rs.getString("isbn"),
+                        new ISBN(rs.getString("isbn")),
                         rs.getString("title"),
                         rs.getString("author"),
-                        rs.getString("publisher")
+                        rs.getString("publisher"),
+                        rs.getInt("stock")
                 ));
             }
 
@@ -82,10 +85,11 @@ public class PostgreSQLBookRepository implements BookRepository {
 
             if (rs.next()) {
                 return new Book(
-                        rs.getString("isbn"),
+                        new ISBN(rs.getString("isbn")),
                         rs.getString("title"),
                         rs.getString("author"),
-                        rs.getString("publisher")
+                        rs.getString("publisher"),
+                        rs.getInt("stock")
                 );
             }
 
@@ -98,15 +102,16 @@ public class PostgreSQLBookRepository implements BookRepository {
 
     @Override
     public boolean saveBook(Book book) {
-        String sql = "INSERT INTO books (isbn, title, author, publisher) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO books (isbn, title, author, publisher, stock) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, book.isbn());
+            pstmt.setString(1, book.isbn().getValue());
             pstmt.setString(2, book.title());
             pstmt.setString(3, book.author());
             pstmt.setString(4, book.publisher());
+            pstmt.setInt(5, book.stock());
 
             int rows = pstmt.executeUpdate();
             return rows > 0;
@@ -139,7 +144,7 @@ public class PostgreSQLBookRepository implements BookRepository {
 
     @Override
     public Book updateBook(Book book) {
-        String sql = "UPDATE books SET title = ?, author = ?, publisher = ? WHERE isbn = ?";
+        String sql = "UPDATE books SET title = ?, author = ?, publisher = ?, stock = ? WHERE isbn = ?";
 
         try (Connection conn = connect();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -147,7 +152,8 @@ public class PostgreSQLBookRepository implements BookRepository {
             pstmt.setString(1, book.title());
             pstmt.setString(2, book.author());
             pstmt.setString(3, book.publisher());
-            pstmt.setString(4, book.isbn());
+            pstmt.setInt(4, book.stock());
+            pstmt.setString(5, book.isbn().getValue());
 
             int rows = pstmt.executeUpdate();
             return rows > 0 ? book : null;

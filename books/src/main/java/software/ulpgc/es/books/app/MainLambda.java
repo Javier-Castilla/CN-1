@@ -24,10 +24,10 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
             String host = System.getenv("DB_HOST");
             String port = System.getenv("DB_PORT");
             String dbName = System.getenv("DB_NAME");
-            String user = System.getenv("DB_USER");
-            String pass = System.getenv("DB_PASS");
+            String user = System.getenv("DB_USERNAME");
+            String pass = System.getenv("DB_PASSWORD");
             String url = String.format("jdbc:%s://%s:%s/%s", type, host, port, dbName);
-            this.bookRepository = new PostgreSQLBookRepository(url, user, pass);
+            this.bookRepository = PostgreSQLBookRepository.getInstance(url, user, pass);
         } catch (Exception e) {
             throw new RuntimeException("Error al inicializar BookRepository", e);
         }
@@ -37,39 +37,81 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
     public Object handleRequest(Map<String,Object> input, Context context) {
         try {
             String method = (String) input.get("httpMethod");
-            String path = (String) input.get("path");
             String body = (String) input.get("body");
-            Map<String,Object> data = body != null ? mapper.readValue(body, Map.class) : Map.of();
+            Map<String,Object> data = (body != null && !body.isEmpty())
+                    ? mapper.readValue(body, Map.class)
+                    : Map.of();
             Book[] resultHandler = new Book[1];
             switch (method) {
                 case "POST":
-                    Book bookToSave = new Book(new ISBN((String) data.get("isbn")), (String) data.get("title"), (String) data.get("author"), (String) data.get("publisher"));
-                    new CreateBookCommand(() -> bookToSave, result -> resultHandler[0] = result, this.bookRepository).execute();
-                    return resultHandler[0];
+                    return handlePost(data, resultHandler);
                 case "GET":
-                    String stringId = ((Map<String,String>) input.get("queryStringParameters")).get("id");
-                    if (stringId != null) {
-                        ISBN id = new ISBN(stringId);
-                        new GetBookCommand(() -> id, result -> resultHandler[0] = result, bookRepository).execute();
-                        return resultHandler[0];
-                    } else {
-                        List<Book> books = new ArrayList<>();
-                        new GetAllBooksCommand(result -> books.addAll(result), this.bookRepository).execute();
-                        return books;
-                    }
+                    Map<String,String> queryParams = (Map<String,String>) input.get("queryStringParameters");
+                    return handleGet(queryParams, resultHandler);
                 case "PUT":
-                    Book bookToUpdate = new Book(new ISBN((String) data.get("isbn")), (String) data.get("title"), (String) data.get("author"), (String) data.get("publisher"));
-                    new UpdateBookCommand(() -> bookToUpdate, result -> resultHandler[0] = result, this.bookRepository).execute();
-                    return resultHandler[0];
+                    return handlePut(data, resultHandler);
                 case "DELETE":
-                    ISBN deleteId = new ISBN(((Map<String,String>) input.get("queryStringParameters")).get("id"));
-                    new DeleteBookCommand(() -> deleteId, result -> resultHandler[0] = result, this.bookRepository).execute();
-                    return resultHandler[0];
+                    Map<String,String> deleteParams = (Map<String,String>) input.get("queryStringParameters");
+                    return handleDelete(deleteParams, resultHandler);
                 default:
                     throw new IllegalArgumentException("Método no soportado: " + method);
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+            throw new RuntimeException("Error procesando la petición: " + e.getMessage(), e);
+        }
+    }
+
+    private Object handlePost(Map<String,Object> data, Book[] resultHandler) {
+        if (!data.containsKey("isbn") || !data.containsKey("title")) throw new IllegalArgumentException("Datos incompletos para crear un libro");
+        Book bookToSave = new Book(
+                new ISBN((String) data.get("isbn")),
+                (String) data.get("title"),
+                (String) data.getOrDefault("author", ""),
+                (String) data.getOrDefault("publisher", ""),
+                parseStock(data.get("stock"))
+        );
+        new CreateBookCommand(() -> bookToSave, result -> resultHandler[0] = result, bookRepository).execute();
+        return resultHandler[0];
+    }
+
+    private Object handleGet(Map<String,String> queryParams, Book[] resultHandler) {
+        if (queryParams != null && queryParams.get("id") != null) {
+            new GetBookCommand(() -> new ISBN(queryParams.get("id")), result -> resultHandler[0] = result, bookRepository).execute();
+            return resultHandler[0];
+        } else {
+            List<Book> books = new ArrayList<>();
+            new GetAllBooksCommand(books::addAll, bookRepository).execute();
+            return books;
+        }
+    }
+
+    private Object handlePut(Map<String,Object> data, Book[] resultHandler) {
+        if (!data.containsKey("isbn")) throw new IllegalArgumentException("ISBN es obligatorio para actualizar un libro");
+        Book bookToUpdate = new Book(
+                new ISBN((String) data.get("isbn")),
+                (String) data.getOrDefault("title", ""),
+                (String) data.getOrDefault("author", ""),
+                (String) data.getOrDefault("publisher", ""),
+                parseStock(data.get("stock"))
+        );
+        new UpdateBookCommand(() -> bookToUpdate, result -> resultHandler[0] = result, bookRepository).execute();
+        return resultHandler[0];
+    }
+
+    private Object handleDelete(Map<String,String> queryParams, Book[] resultHandler) {
+        if (queryParams == null || queryParams.get("id") == null) throw new IllegalArgumentException("ID es obligatorio para eliminar un libro");
+        new DeleteBookCommand(() -> new ISBN(queryParams.get("id")), result -> resultHandler[0] = result, bookRepository).execute();
+        return resultHandler[0];
+    }
+
+    private int parseStock(Object stockObj) {
+        if (stockObj == null) return 0;
+        if (stockObj instanceof Number) return ((Number) stockObj).intValue();
+        try {
+            return Integer.parseInt(stockObj.toString());
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 }

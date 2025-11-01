@@ -1,0 +1,7 @@
+FROM public.ecr.aws/lambda/java:17
+
+# Copiar tu JAR
+COPY target/books-lambda.jar ${LAMBDA_TASK_ROOT}/lib/
+
+# Handler
+CMD ["software.ulpgc.es.books.app.MainLambda::handleRequest"]

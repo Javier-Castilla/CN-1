@@ -1,7 +1,7 @@
 package software.ulpgc.es.orders.app.io.repository;
 
 import software.ulpgc.es.orders.domain.model.*;
-import software.ulpgc.es.orders.domain.repository.OrderRepository;
+import software.ulpgc.es.orders.domain.io.repository.OrderRepository;
 
 import java.sql.*;
 import java.time.LocalDateTime;

@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create RDS"
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Minimum of 2
+
+  DBIdentifier:
+    Type: String
+    Default: bookstore-db
+    Description: Database identifier
+
+  DBName:
+    Type: String
+    Default: bookstore
+    Description: Database name
+
+  DBUser:
+    Type: String
+    Default: postgres
+    Description: Master User
+
+  BDPassword:
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    Description: Master User Password
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Postgres DB
+      VpcId: !Ref VpcId
+
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnet for RDS
+      SubnetIds: !Ref SubnetIds
+      DBSubnetGroupName: rds-private-subnets
+
+  DB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Ref DBIdentifier
+      Engine: postgres
+      EngineVersion: 17.6
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref BDPassword
+      DBSubnetGroupName: !Ref SubnetGroup
+      VPCSecurityGroups:
+        - !Ref SecurityGroup
+      PubliclyAccessible: false
+      DeletionProtection: false
+      BackupRetentionPeriod: 0
+
+Outputs:
+  EndpointDB:
+    Value: !GetAtt DB.Endpoint.Address
+    Description: DB endpoint
+
+  Port:
+    Value: !GetAtt DB.Endpoint.Port
+    Description: DB port
+
+  DBName:
+    Value: !Ref DBName
+    Description: DB name
+
+  DBUser:
+    Value: !Ref DBUser
+    Description: DB user
