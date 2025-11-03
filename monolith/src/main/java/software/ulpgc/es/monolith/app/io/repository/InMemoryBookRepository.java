@@ -27,7 +27,7 @@ public class InMemoryBookRepository implements BookRepository {
     @Override
     public boolean saveBook(Book book) {
         if (this.books.containsKey(book.isbn())) return false;
-        return this.books.put(book.isbn(), book) == null;
+        return this.books.put(book.isbn().getValue(), book) == null;
     }
 
     @Override
@@ -37,6 +37,6 @@ public class InMemoryBookRepository implements BookRepository {
 
     @Override
     public Book updateBook(Book book) {
-        return this.books.put(book.isbn(), book);
+        return this.books.put(book.isbn().getValue(), book);
     }
 }

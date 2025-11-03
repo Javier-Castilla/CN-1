@@ -4,6 +4,9 @@ import software.ulpgc.es.monolith.domain.model.ISBN;
 import software.ulpgc.es.monolith.domain.model.Order;
 import software.ulpgc.es.monolith.domain.model.OrderItem;
 import software.ulpgc.es.monolith.domain.io.repository.OrderRepository;
+import software.ulpgc.es.monolith.domain.io.repository.exceptions.books.InsufficientStockException;
+import software.ulpgc.es.monolith.domain.io.repository.exceptions.orders.OrderNotFoundException;
+import software.ulpgc.es.monolith.domain.io.repository.exceptions.orders.OrdersDatabaseException;
 
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -11,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostgreSQLOrderRepository implements OrderRepository {
+
     private final String url;
     private final String user;
     private final String password;
@@ -44,13 +48,12 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             );
         """;
 
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
+        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(sqlOrders);
             stmt.execute(sqlItems);
             System.out.println("Tables 'orders' and 'order_items' verified or created correctly.");
         } catch (SQLException e) {
-            System.err.println("Error initializing tables: " + e.getMessage());
+            throw new OrdersDatabaseException("Error initializing orders tables", e);
         }
     }
 
@@ -60,43 +63,59 @@ public class PostgreSQLOrderRepository implements OrderRepository {
 
         try (PreparedStatement pstmt = conn.prepareStatement(sqlItems)) {
             pstmt.setInt(1, orderId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                String isbnStr = rs.getString("book_isbn");
-                int quantity = rs.getInt("quantity");
-                items.add(new OrderItem(new ISBN(isbnStr), quantity));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    String isbnStr = rs.getString("book_isbn");
+                    int quantity = rs.getInt("quantity");
+                    items.add(new OrderItem(new ISBN(isbnStr), quantity));
+                }
+            }
+        }
+        return items;
+    }
+
+    private void reduceStock(Connection conn, OrderItem item) throws SQLException {
+        String sqlCheckStock = "SELECT stock FROM books WHERE isbn = ? FOR UPDATE";
+        String sqlUpdateStock = "UPDATE books SET stock = stock - ? WHERE isbn = ?";
+
+        try (PreparedStatement checkStmt = conn.prepareStatement(sqlCheckStock)) {
+            checkStmt.setString(1, item.isbn().getValue());
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new OrdersDatabaseException("Book not found: " + item.isbn().getValue(), null);
+                }
+                int stock = rs.getInt("stock");
+                if (stock < item.quantity()) {
+                    // <- CORREGIR ESTA LÍNEA
+                    throw new InsufficientStockException(item.isbn().getValue(), item.quantity(), stock);
+                }
             }
         }
 
-        return items;
+        try (PreparedStatement updateStmt = conn.prepareStatement(sqlUpdateStock)) {
+            updateStmt.setInt(1, item.quantity());
+            updateStmt.setString(2, item.isbn().getValue());
+            updateStmt.executeUpdate();
+        }
     }
 
     @Override
     public Order getOrder(int id) {
-        String sql = """
-            SELECT id AS order_id, customer_id, order_date
-            FROM orders
-            WHERE id = ?
-        """;
-
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        String sql = "SELECT id AS order_id, customer_id, order_date FROM orders WHERE id = ?";
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
-
-            if (!rs.next()) return null;
-
-            int customerId = rs.getInt("customer_id");
-            Timestamp ts = rs.getTimestamp("order_date");
-            LocalDateTime date = ts != null ? ts.toLocalDateTime() : LocalDateTime.now();
-
-            List<OrderItem> items = getOrderItems(id, conn);
-
-            return new Order(id, customerId, date, items);
-
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new OrderNotFoundException(id);
+                }
+                int customerId = rs.getInt("customer_id");
+                Timestamp ts = rs.getTimestamp("order_date");
+                LocalDateTime date = ts != null ? ts.toLocalDateTime() : LocalDateTime.now();
+                List<OrderItem> items = getOrderItems(id, conn);
+                return new Order(id, customerId, date, items);
+            }
         } catch (SQLException e) {
-            throw new RuntimeException("Error fetching order with id " + id, e);
+            throw new OrdersDatabaseException("Error fetching order with id " + id, e);
         }
     }
 
@@ -104,19 +123,15 @@ public class PostgreSQLOrderRepository implements OrderRepository {
     public List<Order> getAllOrders() {
         List<Order> orders = new ArrayList<>();
         String sql = "SELECT id FROM orders";
-
         try (Connection conn = connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
                 orders.add(getOrder(rs.getInt("id")));
             }
-
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new OrdersDatabaseException("Error retrieving all orders", e);
         }
-
         return orders;
     }
 
@@ -124,20 +139,16 @@ public class PostgreSQLOrderRepository implements OrderRepository {
     public List<Order> getOrdersByCustomer(int customerId) {
         List<Order> orders = new ArrayList<>();
         String sql = "SELECT id FROM orders WHERE customer_id = ?";
-
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
+        try (Connection conn = connect(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, customerId);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                orders.add(getOrder(rs.getInt("id")));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(getOrder(rs.getInt("id")));
+                }
             }
-
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new OrdersDatabaseException("Error retrieving orders for customer " + customerId, e);
         }
-
         return orders;
     }
 
@@ -149,15 +160,18 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         try (Connection conn = connect()) {
             conn.setAutoCommit(false);
 
+            // Comprobamos y reducimos stock
+            for (OrderItem item : order.items()) {
+                reduceStock(conn, item);
+            }
+
             int orderId;
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertOrder)) {
                 pstmt.setInt(1, order.customerId());
                 pstmt.setTimestamp(2, Timestamp.valueOf(order.date()));
-                ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) orderId = rs.getInt("id");
-                else {
-                    conn.rollback();
-                    return null;
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) orderId = rs.getInt("id");
+                    else throw new OrdersDatabaseException("Failed to insert order, no ID returned", null);
                 }
             }
 
@@ -175,8 +189,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             return new Order(orderId, order.customerId(), order.date(), order.items());
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new OrdersDatabaseException("Error saving order", e);
         }
     }
 
@@ -196,13 +209,18 @@ public class PostgreSQLOrderRepository implements OrderRepository {
                 int affected = pstmt.executeUpdate();
                 if (affected == 0) {
                     conn.rollback();
-                    return null;
+                    throw new OrderNotFoundException(order.id());
                 }
             }
 
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteItems)) {
                 pstmt.setInt(1, order.id());
                 pstmt.executeUpdate();
+            }
+
+            // Comprobamos y reducimos stock antes de insertar items
+            for (OrderItem item : order.items()) {
+                reduceStock(conn, item);
             }
 
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertItem)) {
@@ -219,16 +237,13 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             return order;
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new OrdersDatabaseException("Error updating order with id " + order.id(), e);
         }
     }
 
     @Override
     public Order cancelOrder(int id) {
-        Order order = getOrder(id);
-        if (order == null) return null;
-
+        Order order = getOrder(id); // Lanzará OrderNotFoundException si no existe
         String sqlDeleteItems = "DELETE FROM order_items WHERE order_id = ?";
         String sqlDeleteOrder = "DELETE FROM orders WHERE id = ?";
 
@@ -249,8 +264,7 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             return order;
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new OrdersDatabaseException("Error canceling order with id " + id, e);
         }
     }
 }

@@ -53,13 +53,13 @@ public class Main {
 
     @Bean
     public CustomerRepository customerRepository() {
-        return new PostgreSQLCustomerRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        return PostgreSQLCustomerRepository.getInstance(buildJdbcUrl(), dbUsername, dbPassword);
         //return new InMemoryCustomerRepository();
     }
 
     @Bean
     public BookRepository bookRepository() {
-        return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
+        return PostgreSQLBookRepository.getInstance(buildJdbcUrl(), dbUsername, dbPassword);
         // return new InMemoryBookRepository();
     }
 

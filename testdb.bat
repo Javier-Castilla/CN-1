@@ -1,3 +1,4 @@
+docker network create ms-network
 docker stop my_postgres
 docker rm my_postgres
 docker build -t postgres-example .
