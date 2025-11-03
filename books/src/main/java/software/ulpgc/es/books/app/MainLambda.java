@@ -45,25 +45,21 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
 
             Book[] resultHandler = new Book[1];
 
-            switch (method) {
-                case "POST" -> {
-                    return handlePost(data, resultHandler);
-                }
+            return switch (method) {
+                case "POST" -> handlePost(data, resultHandler);
                 case "GET" -> {
+                    @SuppressWarnings("unchecked")
                     Map<String, String> queryParams = (Map<String, String>) input.get("queryStringParameters");
-                    return handleGet(queryParams, resultHandler);
+                    yield handleGet(queryParams, resultHandler);
                 }
-                case "PUT" -> {
-                    return handlePut(data, resultHandler);
-                }
+                case "PUT" -> handlePut(data, resultHandler);
                 case "DELETE" -> {
+                    @SuppressWarnings("unchecked")
                     Map<String, String> deleteParams = (Map<String, String>) input.get("queryStringParameters");
-                    return handleDelete(deleteParams, resultHandler);
+                    yield handleDelete(deleteParams, resultHandler);
                 }
-                default -> {
-                    return buildError(400, "Método no soportado: " + method);
-                }
-            }
+                default -> buildError(400, "Método no soportado: " + method);
+            };
 
         } catch (IllegalArgumentException e) {
             return buildError(400, e.getMessage());
@@ -96,8 +92,8 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
     }
 
     private Object handleGet(Map<String, String> queryParams, Book[] resultHandler) {
-        if (queryParams != null && queryParams.get("id") != null) {
-            new GetBookCommand(() -> new ISBN(queryParams.get("id")), result -> resultHandler[0] = result, bookRepository).execute();
+        if (queryParams != null && queryParams.get("isbn") != null) {
+            new GetBookCommand(() -> new ISBN(queryParams.get("isbn")), result -> resultHandler[0] = result, bookRepository).execute();
             return buildResponse(200, resultHandler[0]);
         } else {
             List<Book> books = new ArrayList<>();
@@ -123,10 +119,10 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
     }
 
     private Object handleDelete(Map<String, String> queryParams, Book[] resultHandler) {
-        if (queryParams == null || queryParams.get("id") == null)
-            throw new IllegalArgumentException("ID es obligatorio para eliminar un libro");
+        if (queryParams == null || queryParams.get("isbn") == null)
+            throw new IllegalArgumentException("ISBN es obligatorio para eliminar un libro");
 
-        new DeleteBookCommand(() -> new ISBN(queryParams.get("id")), result -> resultHandler[0] = result, bookRepository).execute();
+        new DeleteBookCommand(() -> new ISBN(queryParams.get("isbn")), result -> resultHandler[0] = result, bookRepository).execute();
         return buildResponse(200, resultHandler[0]);
     }
 
@@ -141,13 +137,13 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
     }
 
     // ============================================================
-    // Métodos auxiliares para respuestas coherentes con el controller
+    // Métodos auxiliares
     // ============================================================
     private Map<String, Object> buildResponse(int statusCode, Object body) {
         return Map.of(
                 "statusCode", statusCode,
-                "body", toJson(body),
-                "headers", Map.of("Content-Type", "application/json")
+                "headers", Map.of("Content-Type", "application/json"),
+                "body", toJson(body)
         );
     }
 
@@ -155,8 +151,8 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         ErrorResponse error = new ErrorResponse(statusCode, message);
         return Map.of(
                 "statusCode", statusCode,
-                "body", toJson(error),
-                "headers", Map.of("Content-Type", "application/json")
+                "headers", Map.of("Content-Type", "application/json"),
+                "body", toJson(error)
         );
     }
 
@@ -168,6 +164,5 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         }
     }
 
-    // DTO simple para respuestas de error
     private record ErrorResponse(int status, String message) {}
 }
