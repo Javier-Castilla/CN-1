@@ -2,6 +2,7 @@ package software.ulpgc.es.books.app.io.repository;
 
 import software.ulpgc.es.books.domain.model.Book;
 import software.ulpgc.es.books.domain.io.repository.BookRepository;
+import software.ulpgc.es.books.domain.io.repository.exceptions.*;
 import software.ulpgc.es.books.domain.model.ISBN;
 
 import java.sql.*;
@@ -46,11 +47,11 @@ public class PostgreSQLBookRepository implements BookRepository {
 
             try (Statement stmt = connection.createStatement()) {
                 stmt.execute(sql);
-                System.out.println("Table 'books' verified or created correctly.");
+                System.out.println("Table 'monolith' verified or created correctly.");
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to connect or initialize database", e);
+            throw new BooksDatabaseException("Failed to connect or initialize database", e);
         }
     }
 
@@ -60,7 +61,7 @@ public class PostgreSQLBookRepository implements BookRepository {
                 connection = DriverManager.getConnection(url, user, password);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to get database connection", e);
+            throw new BooksDatabaseException("Failed to get database connection", e);
         }
         return connection;
     }
@@ -72,8 +73,8 @@ public class PostgreSQLBookRepository implements BookRepository {
 
         try (Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             while (rs.next()) {
+                System.out.println(rs.getString("title"));
                 books.add(new Book(
                         new ISBN(rs.getString("isbn")),
                         rs.getString("title"),
@@ -83,8 +84,8 @@ public class PostgreSQLBookRepository implements BookRepository {
                 ));
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            throw new BooksDatabaseException("Error fetching all books", e);
         }
 
         return books;
@@ -105,13 +106,13 @@ public class PostgreSQLBookRepository implements BookRepository {
                             rs.getString("publisher"),
                             rs.getInt("stock")
                     );
+                } else {
+                    throw new BookNotFoundException("Book with ISBN " + isbn + " not found");
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new BooksDatabaseException("Error fetching book with ISBN " + isbn, e);
         }
-
-        return null;
     }
 
     @Override
@@ -125,28 +126,29 @@ public class PostgreSQLBookRepository implements BookRepository {
             pstmt.setString(4, book.publisher());
             pstmt.setInt(5, book.stock());
 
-            return pstmt.executeUpdate() > 0;
+            pstmt.executeUpdate();
+            return true;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            if ("23505".equals(e.getSQLState())) { // PostgreSQL code for unique_violation
+                throw new DuplicateBookException("Book with ISBN " + book.isbn().getValue() + " already exists");
+            }
+            throw new BooksDatabaseException("Error saving book " + book.title(), e);
         }
     }
 
     @Override
     public Book deleteBook(String isbn) {
-        Book book = getBook(isbn);
-        if (book == null) return null;
+        Book book = getBook(isbn); // throws if not found
 
         String sql = "DELETE FROM books WHERE isbn = ?";
 
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setString(1, isbn);
             pstmt.executeUpdate();
+            return book;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new BooksDatabaseException("Error deleting book with ISBN " + isbn, e);
         }
-
-        return book;
     }
 
     @Override
@@ -160,10 +162,14 @@ public class PostgreSQLBookRepository implements BookRepository {
             pstmt.setInt(4, book.stock());
             pstmt.setString(5, book.isbn().getValue());
 
-            return pstmt.executeUpdate() > 0 ? book : null;
+            int affected = pstmt.executeUpdate();
+            if (affected == 0) {
+                throw new BookNotFoundException("Book with ISBN " + book.isbn().getValue() + " not found for update");
+            }
+
+            return book;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new BooksDatabaseException("Error updating book with ISBN " + book.isbn().getValue(), e);
         }
     }
 }

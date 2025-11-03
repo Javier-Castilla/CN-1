@@ -2,6 +2,7 @@ package software.ulpgc.es.customers.app.io.repository;
 
 import software.ulpgc.es.customers.domain.model.Customer;
 import software.ulpgc.es.customers.domain.io.repository.CustomerRepository;
+import software.ulpgc.es.customers.domain.io.repository.exceptions.*;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -45,15 +46,19 @@ public class PostgreSQLCustomerRepository implements CustomerRepository {
                 System.out.println("Table 'customers' verified or created correctly.");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error initializing Customer repository: " + e.getMessage(), e);
+            throw new CustomersDatabaseException("Error initializing Customer repository", e);
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(url, user, password);
+    private Connection getConnection() {
+        try {
+            if (connection == null || connection.isClosed()) {
+                connection = DriverManager.getConnection(url, user, password);
+            }
+            return connection;
+        } catch (SQLException e) {
+            throw new CustomersDatabaseException("Failed to get database connection", e);
         }
-        return connection;
     }
 
     @Override
@@ -61,14 +66,16 @@ public class PostgreSQLCustomerRepository implements CustomerRepository {
         String sql = "SELECT * FROM customers WHERE id = ?";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return new Customer(rs.getInt("id"), rs.getString("name"), rs.getString("email"));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Customer(rs.getInt("id"), rs.getString("name"), rs.getString("email"));
+                } else {
+                    throw new CustomerNotFoundException(id);
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new CustomersDatabaseException("Error retrieving customer with ID " + id, e);
         }
-        return null;
     }
 
     @Override
@@ -77,13 +84,18 @@ public class PostgreSQLCustomerRepository implements CustomerRepository {
         List<Customer> customers = new ArrayList<>();
         try (Statement stmt = getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
+
             while (rs.next()) {
-                customers.add(new Customer(rs.getInt("id"), rs.getString("name"), rs.getString("email")));
+                customers.add(new Customer(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("email")
+                ));
             }
+            return customers;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new CustomersDatabaseException("Error retrieving all customers", e);
         }
-        return customers;
     }
 
     @Override
@@ -92,14 +104,20 @@ public class PostgreSQLCustomerRepository implements CustomerRepository {
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setString(1, customer.name());
             pstmt.setString(2, customer.email());
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return new Customer(rs.getInt("id"), customer.name(), customer.email());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Customer(rs.getInt("id"), customer.name(), customer.email());
+                } else {
+                    throw new CustomersDatabaseException("Failed to insert customer, no ID returned", null);
+                }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            // Código SQLState que empieza por 23 indica violación de restricción (unique, foreign key, etc.)
+            if (e.getSQLState() != null && e.getSQLState().startsWith("23")) {
+                throw new DuplicateCustomerException(customer.email());
+            }
+            throw new CustomersDatabaseException("Error saving customer", e);
         }
-        return null;
     }
 
     @Override
@@ -110,24 +128,29 @@ public class PostgreSQLCustomerRepository implements CustomerRepository {
             pstmt.setString(2, customer.email());
             pstmt.setInt(3, customer.id());
             int rows = pstmt.executeUpdate();
-            return rows > 0 ? customer : null;
+
+            if (rows == 0) {
+                throw new CustomerNotFoundException(customer.id());
+            }
+            return customer;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            if (e.getSQLState() != null && e.getSQLState().startsWith("23")) {
+                throw new DuplicateCustomerException(customer.email());
+            }
+            throw new CustomersDatabaseException("Error updating customer", e);
         }
     }
 
     @Override
     public Customer deleteCustomer(int id) {
-        Customer customer = getCustomer(id);
-        if (customer == null) return null;
+        Customer customer = getCustomer(id); // Lanzará OrderNotFoundException si no existe
         String sql = "DELETE FROM customers WHERE id = ?";
         try (PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, id);
             pstmt.executeUpdate();
+            return customer;
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new CustomersDatabaseException("Error deleting customer with ID " + id, e);
         }
-        return customer;
     }
 }
