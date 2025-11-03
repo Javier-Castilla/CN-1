@@ -1,4 +1,4 @@
-package software.ulpgc.es.monolith.app.repository;
+package software.ulpgc.es.monolith.app.io.repository;
 
 import software.ulpgc.es.monolith.domain.model.ISBN;
 import software.ulpgc.es.monolith.domain.model.Order;

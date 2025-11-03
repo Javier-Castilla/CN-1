@@ -33,4 +33,5 @@ build/
 .vscode/
 
 **/.env
+
 **/upload-docker.bat

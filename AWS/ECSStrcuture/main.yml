@@ -38,6 +38,24 @@ Parameters:
     MinLength: 8
 
 Resources:
+  # Ingress desde cualquier dirección porque realmente el NLB se declara con schema: internal,
+  # por lo que solo permite conexiones de dentro de mi VPC. Esto me permite usar este SG en el
+  # SG del ECS, permitiéndome denegar conexión desde fuera de la VPC, pues solo permite que se
+  # le conecte este SG, es decir, el NLB.
+  NLBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for NLB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  # Aquí es donde declaro la regla de Ingress solo desde el SG del NLB, pues necesito
+  # poder asignarle una IP pública al ECS para que pueda acceder al ECR y obtener la
+  # imagen de docker necesaria.
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -47,7 +65,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
-          CidrIp: 0.0.0.0/0
+          SourceSecurityGroupId: !Ref NLBSecurityGroup
 
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -93,6 +111,8 @@ Resources:
       Type: network
       Scheme: internal
       Subnets: !Ref SubnetIds
+      SecurityGroups:
+        - !Ref NLBSecurityGroup
 
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
