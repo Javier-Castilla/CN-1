@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create ECR for Lambda"
+
+Parameters:
+  ECRName:
+    Type: String
+    Default: bookstore
+    Description: ECR name
+
+Resources:
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref ECRName
+      ImageScanningConfiguration:
+        ScanOnPush: false
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only specific tags",
+                "selection": {
+                  "tagStatus": "tagged",
+                  "tagPrefixList": ["books", "orders", "users"],
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 1
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+
+Outputs:
+  RepositoryUri:
+    Description: "URI del ECR"
+    Value: !GetAtt ECR.RepositoryUri
+  RepositoryName:
+    Description: "Nombre del ECR"
+    Value: !Ref ECR

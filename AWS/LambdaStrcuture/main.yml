@@ -1,0 +1,782 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create Lambdas + Api Gateway + RDS"
+
+Parameters:
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Minimum of 2
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+
+  DBIdentifier:
+    Type: String
+    Default: bookstore-db
+    Description: Database identifier
+
+  DBType:
+    Type: String
+    Default: postgresql
+
+  DBName:
+    Type: String
+    Description: Database name for RDS
+
+  DBUser:
+    Type: String
+    Description: Database user for RDS
+
+  DBPassword:
+    Type: String
+    Description: Database master user password for RDS
+    NoEcho: true
+    MinLength: 8
+
+Resources:
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda functions
+      VpcId: !Ref VpcId
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Postgres DB
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnet for RDS
+      SubnetIds: !Ref SubnetIds
+      DBSubnetGroupName: rds-private-subnets-lambdas
+
+  DB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Ref DBIdentifier
+      Engine: postgres
+      EngineVersion: 17.6
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBName: !Ref DBName
+      MasterUsername: !Ref DBUser
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref SubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      PubliclyAccessible: false
+      DeletionProtection: false
+      BackupRetentionPeriod: 0
+
+  BookServiceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: books-lambda
+      PackageType: Image
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/bookstore:books"
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Timeout: 100
+      MemorySize: 512
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref SubnetIds
+      Environment:
+        Variables:
+          DB_TYPE: !Ref DBType
+          DB_HOST: !GetAtt DB.Endpoint.Address
+          DB_PORT: !GetAtt DB.Endpoint.Port
+          DB_NAME: !Ref DBName
+          DB_USERNAME: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+      Architectures:
+        - x86_64
+
+  CustomerServiceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: customers-lambda
+      PackageType: Image
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/bookstore:customers"
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Timeout: 100
+      MemorySize: 512
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref SubnetIds
+      Environment:
+        Variables:
+          DB_TYPE: !Ref DBType
+          DB_HOST: !GetAtt DB.Endpoint.Address
+          DB_PORT: !GetAtt DB.Endpoint.Port
+          DB_NAME: !Ref DBName
+          DB_USERNAME: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+      Architectures:
+        - x86_64
+
+  OrderServiceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: orders-lambda
+      PackageType: Image
+      Code:
+        ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/bookstore:orders"
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Timeout: 100
+      MemorySize: 512
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref SubnetIds
+      Environment:
+        Variables:
+          DB_TYPE: !Ref DBType
+          DB_HOST: !GetAtt DB.Endpoint.Address
+          DB_PORT: !GetAtt DB.Endpoint.Port
+          DB_NAME: !Ref DBName
+          DB_USERNAME: !Ref DBUser
+          DB_PASSWORD: !Ref DBPassword
+      Architectures:
+        - x86_64
+
+  LambdaBooksLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${BookServiceLambda}"
+      RetentionInDays: 7
+
+  LambdaCustomersLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${CustomerServiceLambda}"
+      RetentionInDays: 7
+
+  LambdaOrdersLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${OrderServiceLambda}"
+      RetentionInDays: 7
+
+####################
+### PERMISSIONS ####
+####################
+  LambdaPermissionBooks:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BookServiceLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/*/*/books*"
+
+  LambdaPermissionCustomers:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CustomerServiceLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/*/*/customers*"
+
+  LambdaPermissionOrdersRoot:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OrderServiceLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/*/*/orders*"
+
+  LambdaPermissionOrdersNested:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OrderServiceLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${API}/*/*/customers/*/orders*"
+
+  API:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: bookstore-api-lambda
+      Description: API for bookstore
+
+  ####################
+  #### RESOURCES #####
+  ####################
+  BooksResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !GetAtt API.RootResourceId
+      PathPart: books
+
+  BookResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !Ref BooksResource
+      PathPart: "{id}"
+
+  CustomersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !GetAtt API.RootResourceId
+      PathPart: customers
+
+  CustomerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !Ref CustomersResource
+      PathPart: "{id}"
+
+  CustomerOrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !Ref CustomerResource
+      PathPart: orders
+
+  CustomerOrderResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !Ref CustomerOrdersResource
+      PathPart: "{orderId}"
+
+  OrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !GetAtt API.RootResourceId
+      PathPart: orders
+
+  OrderResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref API
+      ParentId: !Ref OrdersResource
+      PathPart: "{id}"
+
+  ####################
+  ##### METHODS ######
+  ####################
+  PostBooksMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BooksResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BookServiceLambda.Arn}/invocations"
+
+  PostCustomersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerServiceLambda.Arn}/invocations"
+
+  PostCustomerOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrdersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  GetBooksMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BooksResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BookServiceLambda.Arn}/invocations"
+
+  GetBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BookServiceLambda.Arn}/invocations"
+
+  GetCustomersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerServiceLambda.Arn}/invocations"
+
+  GetCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerServiceLambda.Arn}/invocations"
+
+  GetCustomerOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  GetCustomerOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrderResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  GetOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  PutBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BookServiceLambda.Arn}/invocations"
+
+  PutCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerServiceLambda.Arn}/invocations"
+
+  PutOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrderResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  DeleteBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BookServiceLambda.Arn}/invocations"
+
+  DeleteCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CustomerServiceLambda.Arn}/invocations"
+
+  DeleteCustomerOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrderResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  DeleteOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrderResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrderServiceLambda.Arn}/invocations"
+
+  ####################
+  ##### OPTIONS ######
+  ####################
+  OptionsBooksMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BooksResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsCustomersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsCustomerOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrdersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsCustomerOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrderResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrdersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  OptionsOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrderResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  APIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GetBooksMethod
+      - GetBookMethod
+      - GetCustomersMethod
+      - GetCustomerMethod
+      - GetCustomerOrdersMethod
+      - GetCustomerOrderMethod
+      - PostBooksMethod
+      - PostCustomersMethod
+      - PostCustomerOrdersMethod
+    Properties:
+      RestApiId: !Ref API
+
+  APIStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref API
+      DeploymentId: !Ref APIDeployment
+      StageName: prod
+
+  APIKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: bookstore-api-key-lambda
+      Enabled: true
+
+  UsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: APIStage
+    Properties:
+      UsagePlanName: bookstore-usage-plan
+      ApiStages:
+        - ApiId: !Ref API
+          Stage: !Ref APIStage
+
+  UsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref APIKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
+
+Outputs:
+  APIEndpoint:
+    Description: API Gateway URL
+    Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+  APIKeyId:
+    Description: API Key ID
+    Value: !Ref APIKey
+
+  EndpointDB:
+    Value: !GetAtt DB.Endpoint.Address
+    Description: DB endpoint
+
+  Port:
+    Value: !GetAtt DB.Endpoint.Port
+    Description: DB port
+
+  DBName:
+    Value: !Ref DBName
+    Description: DB name
+
+  DBUser:
+    Value: !Ref DBUser
+    Description: DB user

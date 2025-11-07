@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Create ECR"
+Description: "Create ECR ofr ECS"
 
 Parameters:
   ECRName:

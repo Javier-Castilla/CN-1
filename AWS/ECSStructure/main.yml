@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Create ECS + Api Gateway"
+Description: "Create ECS + Api Gateway + RDS"
 
 Parameters:
   ImageName:
@@ -15,7 +15,7 @@ Parameters:
     Type: AWS::EC2::VPC::Id
 
   RouteTableId:
-    Type: AWS::EC2::VPC::Id
+    Type: String
 
   DBIdentifier:
     Type: String
@@ -265,6 +265,9 @@ Resources:
       Name: bookstore-api
       Description: API for bookstore
 
+####################
+#### RESOURCES #####
+####################
   BooksResource:
     Type: AWS::ApiGateway::Resource
     Properties:
@@ -321,6 +324,9 @@ Resources:
       ParentId: !Ref OrdersResource
       PathPart: "{id}"
 
+####################
+##### METHODS ######
+####################
   PostBooksMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -328,7 +334,7 @@ Resources:
       ResourceId: !Ref BooksResource
       HttpMethod: POST
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: POST
@@ -343,7 +349,7 @@ Resources:
       ResourceId: !Ref CustomersResource
       HttpMethod: POST
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: POST
@@ -358,7 +364,7 @@ Resources:
       ResourceId: !Ref CustomerOrdersResource
       HttpMethod: POST
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: POST
@@ -373,7 +379,7 @@ Resources:
       ResourceId: !Ref BooksResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -388,7 +394,7 @@ Resources:
       ResourceId: !Ref BookResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -403,7 +409,7 @@ Resources:
       ResourceId: !Ref CustomersResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -418,7 +424,7 @@ Resources:
       ResourceId: !Ref CustomerResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -433,7 +439,7 @@ Resources:
       ResourceId: !Ref CustomerOrdersResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -448,7 +454,7 @@ Resources:
       ResourceId: !Ref CustomerOrderResource
       HttpMethod: GET
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: HTTP_PROXY
         IntegrationHttpMethod: GET
@@ -456,6 +462,129 @@ Resources:
         ConnectionType: VPC_LINK
         ConnectionId: !Ref VPCLink
 
+  GetOrdersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: GET
+        Uri: !Sub "http://${NLB.DNSName}:8080/orders"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  PutBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: PUT
+        Uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  PutCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: PUT
+        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  PutOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrderResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: PUT
+        Uri: !Sub "http://${NLB.DNSName}:8080/orders/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  DeleteBookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref BookResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: DELETE
+        Uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  DeleteCustomerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: DELETE
+        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  DeleteCustomerOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref CustomerOrderResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: DELETE
+        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders/{orderId}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+  DeleteOrderMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref API
+      ResourceId: !Ref OrderResource
+      HttpMethod: DELETE
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: HTTP_PROXY
+        IntegrationHttpMethod: DELETE
+        Uri: !Sub "http://${NLB.DNSName}:8080/orders/{id}"
+        ConnectionType: VPC_LINK
+        ConnectionId: !Ref VPCLink
+
+####################
+##### OPTIONS ######
+####################
   OptionsBooksMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -463,7 +592,7 @@ Resources:
       ResourceId: !Ref BooksResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -490,7 +619,7 @@ Resources:
       ResourceId: !Ref BookResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -517,7 +646,7 @@ Resources:
       ResourceId: !Ref CustomersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -544,7 +673,7 @@ Resources:
       ResourceId: !Ref CustomerResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -571,7 +700,7 @@ Resources:
       ResourceId: !Ref CustomerOrdersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -598,7 +727,7 @@ Resources:
       ResourceId: !Ref CustomerOrderResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -625,7 +754,7 @@ Resources:
       ResourceId: !Ref OrdersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -652,7 +781,7 @@ Resources:
       ResourceId: !Ref OrderResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: false
+      ApiKeyRequired: true
       Integration:
         Type: MOCK
         IntegrationResponses:
