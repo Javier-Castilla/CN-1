@@ -14,6 +14,9 @@ Parameters:
   VpcId:
     Type: AWS::EC2::VPC::Id
 
+  RouteTableId:
+    Type: AWS::EC2::VPC::Id
+
   DBIdentifier:
     Type: String
     Default: bookstore-db
@@ -53,9 +56,6 @@ Resources:
           ToPort: 8080
           CidrIp: 0.0.0.0/0
 
-  # Aquí es donde declaro la regla de Ingress solo desde el SG del NLB, pues necesito
-  # poder asignarle una IP pública al ECS para que pueda acceder al ECR y obtener la
-  # imagen de docker necesaria.
   SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -178,6 +178,59 @@ Resources:
             - Name: DB_PASSWORD
               Value: !Ref DBPassword
 
+  VPCEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for VPC Endpoints
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref SecurityGroup
+
+  ECRApiEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.api"
+      VpcEndpointType: Interface
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  ECRDkrEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.ecr.dkr"
+      VpcEndpointType: Interface
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      VpcEndpointType: Interface
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VpcId
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref RouteTableId
+
   ECSService:
     Type: AWS::ECS::Service
     DependsOn:
@@ -190,7 +243,7 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
+          AssignPublicIp: DISABLED
           Subnets: !Ref SubnetIds
           SecurityGroups:
             - !Ref SecurityGroup
