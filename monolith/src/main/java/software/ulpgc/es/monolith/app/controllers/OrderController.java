@@ -68,7 +68,7 @@ public class OrderController {
             DeleteOrderCommand.Input input = () -> orderId;
             DeleteOrderCommand.Output output = result -> resultHolder[0] = result;
             commandFactory.with(input, output)
-                    .build("cancelOrder")
+                    .build("deleteOrder")
                     .execute();
 
             if (resultHolder[0] != null) {

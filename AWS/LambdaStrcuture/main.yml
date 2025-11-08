@@ -503,7 +503,7 @@ Resources:
       ResourceId: !Ref BooksResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -530,7 +530,7 @@ Resources:
       ResourceId: !Ref BookResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -557,7 +557,7 @@ Resources:
       ResourceId: !Ref CustomersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -584,7 +584,7 @@ Resources:
       ResourceId: !Ref CustomerResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -611,7 +611,7 @@ Resources:
       ResourceId: !Ref CustomerOrdersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -638,7 +638,7 @@ Resources:
       ResourceId: !Ref CustomerOrderResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -665,7 +665,7 @@ Resources:
       ResourceId: !Ref OrdersResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:
@@ -692,7 +692,7 @@ Resources:
       ResourceId: !Ref OrderResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
-      ApiKeyRequired: true
+      ApiKeyRequired: false
       Integration:
         Type: MOCK
         IntegrationResponses:

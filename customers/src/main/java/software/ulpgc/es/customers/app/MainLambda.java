@@ -56,6 +56,9 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
                     Map<String, String> deleteParams = (Map<String, String>) input.get("queryStringParameters");
                     return handleDelete(deleteParams, resultHandler);
                 }
+                case "OPTIONS" -> {
+                    return buildCorsPreflightResponse(); // 👈 importante para preflight
+                }
                 default -> {
                     return buildError(400, "Método no soportado: " + method);
                 }
@@ -126,11 +129,15 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         }
     }
 
+    // ============================================================
+    // Métodos auxiliares con CORS
+    // ============================================================
+
     private Map<String, Object> buildResponse(int statusCode, Object body) {
         return Map.of(
                 "statusCode", statusCode,
-                "body", toJson(body),
-                "headers", Map.of("Content-Type", "application/json")
+                "headers", corsHeaders(), // 👈 cabeceras CORS añadidas
+                "body", toJson(body)
         );
     }
 
@@ -138,8 +145,26 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         ErrorResponse error = new ErrorResponse(statusCode, message);
         return Map.of(
                 "statusCode", statusCode,
-                "body", toJson(error),
-                "headers", Map.of("Content-Type", "application/json")
+                "headers", corsHeaders(), // 👈 también aquí
+                "body", toJson(error)
+        );
+    }
+
+    private Map<String, String> corsHeaders() {
+        return Map.of(
+                "Content-Type", "application/json",
+                "Access-Control-Allow-Origin", "*",
+                "Access-Control-Allow-Headers", "Content-Type,x-api-key",
+                "Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"
+        );
+    }
+
+    private Map<String, Object> buildCorsPreflightResponse() {
+        // Respuesta directa a las solicitudes OPTIONS del navegador
+        return Map.of(
+                "statusCode", 200,
+                "headers", corsHeaders(),
+                "body", ""
         );
     }
 

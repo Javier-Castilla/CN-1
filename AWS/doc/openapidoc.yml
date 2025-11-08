@@ -1,0 +1,410 @@
+openapi: 3.0.1
+info:
+  title: Bookstore API
+  version: "1.0"
+  description: API for Bookstore with AWS Lambda integration
+servers:
+  - url: https://{api_id}.execute-api.{region}.amazonaws.com/prod
+    variables:
+      api_id:
+        default: "API_ID_HERE"
+      region:
+        default: "REGION_HERE"
+
+paths:
+  /books:
+    get:
+      summary: Retrieve all books
+      responses:
+        '200':
+          description: List of books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/arn:aws:lambda:{region}:{account_id}:function:books-lambda/invocations
+        httpMethod: POST
+        type: aws_proxy
+    post:
+      summary: Create a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+      responses:
+        '201':
+          description: Book created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/arn:aws:lambda:{region}:{account_id}:function:books-lambda/invocations
+        httpMethod: POST
+        type: aws_proxy
+  /books/{isbn}:
+    parameters:
+      - name: isbn
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Retrieve a book by ISBN
+      responses:
+        '200':
+          description: Book found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+      x-amazon-apigateway-integration:
+        uri: arn:aws:apigateway:{region}:lambda:path/2015-03-31/functions/arn:aws:lambda:{region}:{account_id}:function:books-lambda/invocations
+        httpMethod: POST
+        type: aws_proxy
+    put:
+      summary: Update a book
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+      responses:
+        '200':
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Delete a book
+      responses:
+        '200':
+          description: Book deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /customers:
+    get:
+      summary: Retrieve all customers
+      responses:
+        '200':
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Customer'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Create a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /customers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Retrieve a customer by ID
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInputWithId'
+      responses:
+        '200':
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a customer
+      responses:
+        '200':
+          description: Customer deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders:
+    get:
+      summary: Retrieve all orders
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Create an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Retrieve an order by ID
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInputWithId'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      summary: Delete an order
+      responses:
+        '200':
+          description: Order deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        isbn:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        publisher:
+          type: string
+        stock:
+          type: integer
+    BookInput:
+      type: object
+      required:
+        - isbn
+        - title
+      properties:
+        isbn: { type: string }
+        title: { type: string }
+        author: { type: string }
+        publisher: { type: string }
+        stock: { type: integer }
+    Customer:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+    CustomerInput:
+      type: object
+      required: [name, email]
+      properties:
+        name: { type: string }
+        email: { type: string }
+    CustomerInputWithId:
+      allOf:
+        - $ref: '#/components/schemas/CustomerInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer }
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        customerId: { type: integer }
+        date: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    OrderItem:
+      type: object
+      properties:
+        isbn: { type: string }
+        quantity: { type: integer }
+    OrderInput:
+      type: object
+      required: [customerId, items]
+      properties:
+        customerId: { type: integer }
+        date: { type: string, format: date-time }
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    OrderInputWithId:
+      allOf:
+        - $ref: '#/components/schemas/OrderInput'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer }
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status: { type: integer }
+        message: { type: string }
+
+securitySchemes:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: x-api-key
+security:
+  - ApiKeyAuth: []

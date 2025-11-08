@@ -12,6 +12,8 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PostgreSQLOrderRepository implements OrderRepository {
 
@@ -202,6 +204,10 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         try (Connection conn = connect()) {
             conn.setAutoCommit(false);
 
+            // 1. Obtener items antiguos
+            List<OrderItem> oldItems = getOrderItems(order.id(), conn);
+
+            // 2. Actualizamos la tabla orders
             try (PreparedStatement pstmt = conn.prepareStatement(sqlUpdateOrder)) {
                 pstmt.setInt(1, order.customerId());
                 pstmt.setTimestamp(2, Timestamp.valueOf(order.date()));
@@ -213,14 +219,39 @@ public class PostgreSQLOrderRepository implements OrderRepository {
                 }
             }
 
+            // 3. Ajustamos el stock según diferencias
+            Map<String, Integer> oldMap = oldItems.stream()
+                    .collect(Collectors.toMap(i -> i.isbn().getValue(), OrderItem::quantity));
+
+            Map<String, Integer> newMap = order.items().stream()
+                    .collect(Collectors.toMap(i -> i.isbn().getValue(), OrderItem::quantity));
+
+            // Items nuevos o modificados
+            for (OrderItem newItem : order.items()) {
+                String isbn = newItem.isbn().getValue();
+                int oldQty = oldMap.getOrDefault(isbn, 0);
+                int diff = newItem.quantity() - oldQty;
+
+                if (diff > 0) {
+                    // Necesitamos restar stock extra
+                    reduceStock(conn, new OrderItem(newItem.isbn(), diff));
+                } else if (diff < 0) {
+                    // Devolvemos stock sobrante
+                    increaseStock(conn, new OrderItem(newItem.isbn(), -diff));
+                }
+
+                oldMap.remove(isbn); // Marcamos como procesado
+            }
+
+            // Items eliminados del pedido: devolver todo su stock
+            for (Map.Entry<String, Integer> removed : oldMap.entrySet()) {
+                increaseStock(conn, new OrderItem(new ISBN(removed.getKey()), removed.getValue()));
+            }
+
+            // 4. Reemplazamos items en la base de datos
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteItems)) {
                 pstmt.setInt(1, order.id());
                 pstmt.executeUpdate();
-            }
-
-            // Comprobamos y reducimos stock antes de insertar items
-            for (OrderItem item : order.items()) {
-                reduceStock(conn, item);
             }
 
             try (PreparedStatement pstmt = conn.prepareStatement(sqlInsertItem)) {
@@ -241,14 +272,36 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         }
     }
 
+    private void increaseStock(Connection conn, OrderItem item) throws SQLException {
+        String sql = "UPDATE books SET stock = stock + ? WHERE isbn = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, item.quantity());
+            pstmt.setString(2, item.isbn().getValue());
+            pstmt.executeUpdate();
+        }
+    }
+
     @Override
     public Order cancelOrder(int id) {
-        Order order = getOrder(id); // Lanzará OrderNotFoundException si no existe
+        Order order = getOrder(id); // Puede lanzar OrderNotFoundException si no existe
         String sqlDeleteItems = "DELETE FROM order_items WHERE order_id = ?";
         String sqlDeleteOrder = "DELETE FROM orders WHERE id = ?";
+        String sqlUpdateStock = "UPDATE books SET stock = stock + ? WHERE isbn = ?";
 
         try (Connection conn = connect()) {
             conn.setAutoCommit(false);
+
+            // Repone stock de cada libro en el pedido
+            if (order.items() != null) {
+                try (PreparedStatement updateStockStmt = conn.prepareStatement(sqlUpdateStock)) {
+                    for (OrderItem item : order.items()) {
+                        updateStockStmt.setInt(1, item.quantity());
+                        updateStockStmt.setString(2, item.isbn().getValue());
+                        updateStockStmt.addBatch();
+                    }
+                    updateStockStmt.executeBatch();
+                }
+            }
 
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteItems)) {
                 pstmt.setInt(1, id);

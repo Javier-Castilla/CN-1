@@ -26,8 +26,8 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
             String host = System.getenv("DB_HOST");
             String port = System.getenv("DB_PORT");
             String dbName = System.getenv("DB_NAME");
-            String user = System.getenv("DB_USER");
-            String pass = System.getenv("DB_PASS");
+            String user = System.getenv("DB_USERNAME");
+            String pass = System.getenv("DB_PASSWORD");
             String url = String.format("jdbc:%s://%s:%s/%s", type, host, port, dbName);
             this.orderRepository = new PostgreSQLOrderRepository(url, user, pass);
         } catch (Exception e) {
@@ -42,6 +42,7 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
             String body = (String) input.get("body");
             Map<String,Object> data = body != null && !body.isEmpty() ? mapper.readValue(body, Map.class) : Map.of();
             Order[] resultHandler = new Order[1];
+
             switch (method) {
                 case "POST" -> {
                     Order orderToSave = getOrderFromBodySafe(data);
@@ -80,10 +81,14 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
                 }
                 case "DELETE" -> {
                     Map<String, String> queryParams = (Map<String, String>) input.get("queryStringParameters");
-                    if (queryParams == null || queryParams.get("id") == null) throw new IllegalArgumentException("ID es obligatorio para eliminar un pedido");
+                    if (queryParams == null || queryParams.get("id") == null)
+                        throw new IllegalArgumentException("ID es obligatorio para eliminar un pedido");
                     int deleteId = Integer.parseInt(queryParams.get("id"));
                     new DeleteOrderCommand(() -> deleteId, result -> resultHandler[0] = result, this.orderRepository).execute();
                     return buildResponse(200, resultHandler[0]);
+                }
+                case "OPTIONS" -> {
+                    return buildCorsPreflightResponse(); // 👈 habilita respuesta preflight
                 }
                 default -> throw new IllegalArgumentException("Método no soportado: " + method);
             }
@@ -101,26 +106,72 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
         }
     }
 
+    // ============================================================
+    // Construcción de respuestas con CORS
+    // ============================================================
+
+    private Map<String, Object> buildResponse(int statusCode, Object body) {
+        return Map.of(
+                "statusCode", statusCode,
+                "headers", corsHeaders(), // 👈 añade cabeceras CORS
+                "body", toJson(body)
+        );
+    }
+
+    private Map<String, Object> buildError(int statusCode, String message) {
+        ErrorResponse error = new ErrorResponse(statusCode, message);
+        return Map.of(
+                "statusCode", statusCode,
+                "headers", corsHeaders(), // 👈 también en errores
+                "body", toJson(error)
+        );
+    }
+
+    private Map<String, Object> buildCorsPreflightResponse() {
+        return Map.of(
+                "statusCode", 200,
+                "headers", corsHeaders(),
+                "body", ""
+        );
+    }
+
+    private Map<String, String> corsHeaders() {
+        return Map.of(
+                "Content-Type", "application/json",
+                "Access-Control-Allow-Origin", "*",
+                "Access-Control-Allow-Headers", "Content-Type,x-api-key",
+                "Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"
+        );
+    }
+
+    // ============================================================
+    // Utilidades
+    // ============================================================
+
     private static Order getOrderFromBodySafe(Map<String, Object> data) {
         int id = parseIntSafe(data.get("id"));
         int customerId = parseIntSafe(data.get("customerId"));
         if (customerId <= 0) throw new IllegalArgumentException("customerId es obligatorio y debe ser > 0");
-        LocalDateTime date = data.get("date") != null ? LocalDateTime.parse(data.get("date").toString()) : LocalDateTime.now();
+
+        LocalDateTime date = data.get("date") != null
+                ? LocalDateTime.parse(data.get("date").toString())
+                : LocalDateTime.now();
+
         List<Map<String, Object>> itemsData = (List<Map<String, Object>>) data.getOrDefault("items", List.of());
         List<OrderItem> items = itemsData.stream()
                 .map(item -> {
                     Object isbnObj = item.get("isbn");
                     String isbnValue;
-                    if (isbnObj instanceof Map) {
+                    if (isbnObj instanceof Map)
                         isbnValue = ((Map<?,?>) isbnObj).get("value").toString();
-                    } else {
+                    else
                         isbnValue = isbnObj.toString();
-                    }
                     int quantity = parseIntSafe(item.get("quantity"));
                     if (quantity <= 0) throw new IllegalArgumentException("quantity debe ser > 0 para cada item");
                     return new OrderItem(new ISBN(isbnValue), quantity);
                 })
                 .toList();
+
         return new Order(id, customerId, date, items);
     }
 
@@ -132,23 +183,6 @@ public class MainLambda implements RequestHandler<Map<String,Object>, Object> {
         } catch (Exception e) {
             return 0;
         }
-    }
-
-    private Map<String, Object> buildResponse(int statusCode, Object body) {
-        return Map.of(
-                "statusCode", statusCode,
-                "body", toJson(body),
-                "headers", Map.of("Content-Type", "application/json")
-        );
-    }
-
-    private Map<String, Object> buildError(int statusCode, String message) {
-        ErrorResponse error = new ErrorResponse(statusCode, message);
-        return Map.of(
-                "statusCode", statusCode,
-                "body", toJson(error),
-                "headers", Map.of("Content-Type", "application/json")
-        );
     }
 
     private String toJson(Object obj) {

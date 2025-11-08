@@ -4,7 +4,7 @@ Description: "Create ECR ofr ECS"
 Parameters:
   ECRName:
     Type: String
-    Default: acoplado
+    Default: monolith
     Description: ECR name
 
 Resources:
