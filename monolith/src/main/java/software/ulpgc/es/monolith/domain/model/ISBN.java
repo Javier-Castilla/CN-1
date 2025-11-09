@@ -3,9 +3,7 @@ package software.ulpgc.es.monolith.domain.model;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/**
- * Value Object que representa un ISBN (ISBN-10 o ISBN-13) validando el formato y el checksum.
- */
+
 public final class ISBN {
 
     private static final Pattern ISBN_10_PATTERN = Pattern.compile("^\\d{9}[\\dX]$");
@@ -15,15 +13,11 @@ public final class ISBN {
 
     public ISBN(String value) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("El ISBN no puede ser nulo ni vacío.");
+            throw new IllegalArgumentException("ISBN cannot be empty.");
         }
-
-        // Elimina guiones y espacios
         String cleaned = value.replaceAll("[-\\s]", "");
-
-        // Verifica formato y checksum
         if (!isValid(cleaned)) {
-            throw new IllegalArgumentException("ISBN inválido: " + value);
+            throw new IllegalArgumentException("Invalid ISBN: " + value);
         }
 
         this.value = cleaned;
@@ -32,10 +26,6 @@ public final class ISBN {
     public static ISBN of(String value) {
         return new ISBN(value);
     }
-
-    /**
-     * Valida ISBN-10 o ISBN-13 incluyendo checksum
-     */
     public static boolean isValid(String value) {
         if (ISBN_10_PATTERN.matcher(value).matches()) {
             return isValidISBN10(value);

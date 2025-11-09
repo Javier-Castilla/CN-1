@@ -36,6 +36,8 @@ public class CustomerOrderController {
             return ResponseEntity.ok(resultHolder[0]);
         } catch (OrdersDatabaseException e) {
             return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving customer orders");
+        } catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 

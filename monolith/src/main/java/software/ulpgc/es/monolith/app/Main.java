@@ -53,13 +53,13 @@ public class Main {
 
     @Bean
     public CustomerRepository customerRepository() {
-        return PostgreSQLCustomerRepository.getInstance(buildJdbcUrl(), dbUsername, dbPassword);
+        return new PostgreSQLCustomerRepository(buildJdbcUrl(), dbUsername, dbPassword);
         //return new InMemoryCustomerRepository();
     }
 
     @Bean
     public BookRepository bookRepository() {
-        return PostgreSQLBookRepository.getInstance(buildJdbcUrl(), dbUsername, dbPassword);
+        return new PostgreSQLBookRepository(buildJdbcUrl(), dbUsername, dbPassword);
         // return new InMemoryBookRepository();
     }
 
@@ -90,7 +90,7 @@ public class Main {
                         (CreateOrderCommand.Input input, CreateOrderCommand.Output output) -> new CreateOrderCommand(input, output, orderRepository))
                 .register("getCustomerOrder",
                         (GetCustomerOrderCommand.Input input, GetCustomerOrderCommand.Output output) -> new GetCustomerOrderCommand(input, output, orderRepository))
-                .register("getCustomersOrders",
+                .register("getCustomerOrders",
                         (GetCustomerOrdersCommand.Input input, GetCustomerOrdersCommand.Output output) -> new GetCustomerOrdersCommand(input, output, orderRepository))
                 .register("getOrders",
                         (NoInput input, GetAllOrdersCommand.Output output) -> new GetAllOrdersCommand(output, orderRepository))

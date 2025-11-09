@@ -26,10 +26,12 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
             String dbName = System.getenv("DB_NAME");
             String user = System.getenv("DB_USERNAME");
             String pass = System.getenv("DB_PASSWORD");
+
             String url = String.format("jdbc:%s://%s:%s/%s", type, host, port, dbName);
-            this.customerRepository = PostgreSQLCustomerRepository.getInstance(url, user, pass);
+            this.customerRepository = new PostgreSQLCustomerRepository(url, user, pass);
+
         } catch (Exception e) {
-            throw new RuntimeException("Error al inicializar CustomerRepository", e);
+            throw new RuntimeException("Failed to initialize CustomerRepository", e);
         }
     }
 
@@ -38,31 +40,33 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         try {
             String method = (String) input.get("httpMethod");
             String body = (String) input.get("body");
-            Map<String, Object> data = (body != null && !body.isEmpty()) ? mapper.readValue(body, Map.class) : Map.of();
-            Customer[] resultHandler = new Customer[1];
 
-            switch (method) {
-                case "POST" -> {
-                    return handlePost(data, resultHandler);
-                }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (body != null && !body.isEmpty())
+                    ? mapper.readValue(body, Map.class)
+                    : Map.of();
+
+            return switch (method) {
+                case "POST" -> handlePost(data);
                 case "GET" -> {
-                    Map<String, String> queryParams = (Map<String, String>) input.get("queryStringParameters");
-                    return handleGet(queryParams, resultHandler);
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> pathParams = (Map<String, String>) input.get("pathParameters");
+                    yield handleGet(pathParams);
                 }
                 case "PUT" -> {
-                    return handlePut(data, resultHandler);
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> pathParams = (Map<String, String>) input.get("pathParameters");
+                    yield handlePut(pathParams, data);
                 }
                 case "DELETE" -> {
-                    Map<String, String> deleteParams = (Map<String, String>) input.get("queryStringParameters");
-                    return handleDelete(deleteParams, resultHandler);
+                    @SuppressWarnings("unchecked")
+                    Map<String, String> pathParams = (Map<String, String>) input.get("pathParameters");
+                    yield handleDelete(pathParams);
                 }
-                case "OPTIONS" -> {
-                    return buildCorsPreflightResponse(); // 👈 importante para preflight
-                }
-                default -> {
-                    return buildError(400, "Método no soportado: " + method);
-                }
-            }
+                case "OPTIONS" -> buildCorsPreflightResponse();
+                default -> buildError(400, "Unsupported method: " + method);
+            };
+
         } catch (IllegalArgumentException e) {
             return buildError(400, e.getMessage());
         } catch (CustomerNotFoundException e) {
@@ -73,25 +77,30 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
             return buildError(500, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
-            return buildError(500, "Error inesperado procesando la petición: " + e.getMessage());
+            return buildError(500, "Unexpected error processing request: " + e.getMessage());
         }
     }
 
-    private Object handlePost(Map<String, Object> data, Customer[] resultHandler) {
+    private Object handlePost(Map<String, Object> data) {
         String name = (String) data.getOrDefault("name", "");
         String email = (String) data.getOrDefault("email", "");
-        if (name.isEmpty() || email.isEmpty()) throw new IllegalArgumentException("Datos incompletos para crear un cliente");
 
+        if (name.isEmpty() || email.isEmpty())
+            throw new IllegalArgumentException("Incomplete data to create a customer");
+
+        final Customer[] resultHolder = new Customer[1];
         Customer customerToSave = new Customer(0, name, email);
-        new CreateCustomerCommand(() -> customerToSave, result -> resultHandler[0] = result, customerRepository).execute();
-        return buildResponse(201, resultHandler[0]);
+
+        new CreateCustomerCommand(() -> customerToSave, result -> resultHolder[0] = result, customerRepository).execute();
+        return buildResponse(201, resultHolder[0]);
     }
 
-    private Object handleGet(Map<String, String> queryParams, Customer[] resultHandler) {
-        if (queryParams != null && queryParams.get("id") != null) {
-            int id = Integer.parseInt(queryParams.get("id"));
-            new GetCustomerCommand(() -> id, result -> resultHandler[0] = result, customerRepository).execute();
-            return buildResponse(200, resultHandler[0]);
+    private Object handleGet(Map<String, String> pathParams) {
+        if (pathParams != null && pathParams.containsKey("customerId")) {
+            final Customer[] resultHolder = new Customer[1];
+            int id = Integer.parseInt(pathParams.get("customerId"));
+            new GetCustomerCommand(() -> id, result -> resultHolder[0] = result, customerRepository).execute();
+            return buildResponse(200, resultHolder[0]);
         } else {
             List<Customer> customers = new ArrayList<>();
             new GetAllCustomersCommand(result -> customers.addAll(result), customerRepository).execute();
@@ -99,44 +108,37 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         }
     }
 
-    private Object handlePut(Map<String, Object> data, Customer[] resultHandler) {
-        int id = parseId(data.get("id"));
+    private Object handlePut(Map<String, String> pathParams, Map<String, Object> data) {
+        if (pathParams == null || !pathParams.containsKey("customerId")) {
+            throw new IllegalArgumentException("Customer ID is required to update a customer");
+        }
+
+        int id = Integer.parseInt(pathParams.get("customerId"));
         String name = (String) data.getOrDefault("name", "");
         String email = (String) data.getOrDefault("email", "");
-        if (id == 0) throw new IllegalArgumentException("ID es obligatorio para actualizar un cliente");
 
+        final Customer[] resultHolder = new Customer[1];
         Customer customerToUpdate = new Customer(id, name, email);
-        new UpdateCustomerCommand(() -> customerToUpdate, result -> resultHandler[0] = result, customerRepository).execute();
-        return buildResponse(200, resultHandler[0]);
+
+        new UpdateCustomerCommand(() -> customerToUpdate, result -> resultHolder[0] = result, customerRepository).execute();
+        return buildResponse(200, resultHolder[0]);
     }
 
-    private Object handleDelete(Map<String, String> deleteParams, Customer[] resultHandler) {
-        if (deleteParams == null || deleteParams.get("id") == null)
-            throw new IllegalArgumentException("ID es obligatorio para eliminar un cliente");
-
-        int deleteId = Integer.parseInt(deleteParams.get("id"));
-        new DeleteCustomerCommand(() -> deleteId, result -> resultHandler[0] = result, customerRepository).execute();
-        return buildResponse(200, resultHandler[0]);
-    }
-
-    private int parseId(Object idObj) {
-        if (idObj == null) return 0;
-        if (idObj instanceof Number) return ((Number) idObj).intValue();
-        try {
-            return Integer.parseInt(idObj.toString());
-        } catch (NumberFormatException e) {
-            return 0;
+    private Object handleDelete(Map<String, String> pathParams) {
+        if (pathParams == null || !pathParams.containsKey("customerId")) {
+            throw new IllegalArgumentException("Customer ID is required to delete a customer");
         }
-    }
 
-    // ============================================================
-    // Métodos auxiliares con CORS
-    // ============================================================
+        final Customer[] resultHolder = new Customer[1];
+        int id = Integer.parseInt(pathParams.get("customerId"));
+        new DeleteCustomerCommand(() -> id, result -> resultHolder[0] = result, customerRepository).execute();
+        return buildResponse(200, resultHolder[0]);
+    }
 
     private Map<String, Object> buildResponse(int statusCode, Object body) {
         return Map.of(
                 "statusCode", statusCode,
-                "headers", corsHeaders(), // 👈 cabeceras CORS añadidas
+                "headers", corsHeaders(),
                 "body", toJson(body)
         );
     }
@@ -145,7 +147,7 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         ErrorResponse error = new ErrorResponse(statusCode, message);
         return Map.of(
                 "statusCode", statusCode,
-                "headers", corsHeaders(), // 👈 también aquí
+                "headers", corsHeaders(),
                 "body", toJson(error)
         );
     }
@@ -160,7 +162,6 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
     }
 
     private Map<String, Object> buildCorsPreflightResponse() {
-        // Respuesta directa a las solicitudes OPTIONS del navegador
         return Map.of(
                 "statusCode", 200,
                 "headers", corsHeaders(),
@@ -172,7 +173,7 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
         try {
             return mapper.writeValueAsString(obj);
         } catch (Exception e) {
-            return "{\"error\":\"Error serializando respuesta\"}";
+            return "{\"error\":\"Error serializing response\"}";
         }
     }
 

@@ -29,7 +29,9 @@ public class PostgreSQLOrderRepository implements OrderRepository {
     }
 
     private Connection connect() throws SQLException {
-        return DriverManager.getConnection(url, user, password);
+        Connection conn = DriverManager.getConnection(url, user, password);
+        conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        return conn;
     }
 
     public void initialize() {
@@ -53,7 +55,6 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(sqlOrders);
             stmt.execute(sqlItems);
-            System.out.println("Tables 'orders' and 'order_items' verified or created correctly.");
         } catch (SQLException e) {
             throw new OrdersDatabaseException("Error initializing orders tables", e);
         }
@@ -88,7 +89,6 @@ public class PostgreSQLOrderRepository implements OrderRepository {
                 }
                 int stock = rs.getInt("stock");
                 if (stock < item.quantity()) {
-                    // <- CORREGIR ESTA LÍNEA
                     throw new InsufficientStockException(item.isbn().getValue(), item.quantity(), stock);
                 }
             }
@@ -98,6 +98,15 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             updateStmt.setInt(1, item.quantity());
             updateStmt.setString(2, item.isbn().getValue());
             updateStmt.executeUpdate();
+        }
+    }
+
+    private void increaseStock(Connection conn, OrderItem item) throws SQLException {
+        String sql = "UPDATE books SET stock = stock + ? WHERE isbn = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, item.quantity());
+            pstmt.setString(2, item.isbn().getValue());
+            pstmt.executeUpdate();
         }
     }
 
@@ -159,10 +168,11 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         String sqlInsertOrder = "INSERT INTO orders (customer_id, order_date) VALUES (?, ?) RETURNING id";
         String sqlInsertItem = "INSERT INTO order_items (order_id, book_isbn, quantity) VALUES (?, ?, ?)";
 
-        try (Connection conn = connect()) {
+        Connection conn = null;
+        try {
+            conn = connect();
             conn.setAutoCommit(false);
 
-            // Comprobamos y reducimos stock
             for (OrderItem item : order.items()) {
                 reduceStock(conn, item);
             }
@@ -191,7 +201,16 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             return new Order(orderId, order.customerId(), order.date(), order.items());
 
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new OrdersDatabaseException("Error rolling back transaction", rollbackEx);
+                }
+            }
             throw new OrdersDatabaseException("Error saving order", e);
+        } finally {
+            closeConnection(conn);
         }
     }
 
@@ -201,54 +220,44 @@ public class PostgreSQLOrderRepository implements OrderRepository {
         String sqlDeleteItems = "DELETE FROM order_items WHERE order_id = ?";
         String sqlInsertItem = "INSERT INTO order_items (order_id, book_isbn, quantity) VALUES (?, ?, ?)";
 
-        try (Connection conn = connect()) {
+        Connection conn = null;
+        try {
+            conn = connect();
             conn.setAutoCommit(false);
 
-            // 1. Obtener items antiguos
             List<OrderItem> oldItems = getOrderItems(order.id(), conn);
 
-            // 2. Actualizamos la tabla orders
             try (PreparedStatement pstmt = conn.prepareStatement(sqlUpdateOrder)) {
                 pstmt.setInt(1, order.customerId());
                 pstmt.setTimestamp(2, Timestamp.valueOf(order.date()));
                 pstmt.setInt(3, order.id());
-                int affected = pstmt.executeUpdate();
-                if (affected == 0) {
-                    conn.rollback();
+                int affectedRows = pstmt.executeUpdate();
+
+                if (affectedRows == 0) {
                     throw new OrderNotFoundException(order.id());
                 }
             }
 
-            // 3. Ajustamos el stock según diferencias
             Map<String, Integer> oldMap = oldItems.stream()
                     .collect(Collectors.toMap(i -> i.isbn().getValue(), OrderItem::quantity));
 
-            Map<String, Integer> newMap = order.items().stream()
-                    .collect(Collectors.toMap(i -> i.isbn().getValue(), OrderItem::quantity));
-
-            // Items nuevos o modificados
             for (OrderItem newItem : order.items()) {
                 String isbn = newItem.isbn().getValue();
                 int oldQty = oldMap.getOrDefault(isbn, 0);
                 int diff = newItem.quantity() - oldQty;
 
                 if (diff > 0) {
-                    // Necesitamos restar stock extra
                     reduceStock(conn, new OrderItem(newItem.isbn(), diff));
                 } else if (diff < 0) {
-                    // Devolvemos stock sobrante
                     increaseStock(conn, new OrderItem(newItem.isbn(), -diff));
                 }
-
-                oldMap.remove(isbn); // Marcamos como procesado
+                oldMap.remove(isbn);
             }
 
-            // Items eliminados del pedido: devolver todo su stock
             for (Map.Entry<String, Integer> removed : oldMap.entrySet()) {
                 increaseStock(conn, new OrderItem(new ISBN(removed.getKey()), removed.getValue()));
             }
 
-            // 4. Reemplazamos items en la base de datos
             try (PreparedStatement pstmt = conn.prepareStatement(sqlDeleteItems)) {
                 pstmt.setInt(1, order.id());
                 pstmt.executeUpdate();
@@ -265,33 +274,39 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             }
 
             conn.commit();
+            conn.setAutoCommit(true);
+
             return order;
 
-        } catch (SQLException e) {
+        } catch (SQLException | OrderNotFoundException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new OrdersDatabaseException("Error rolling back transaction during update", rollbackEx);
+                }
+            }
+            if (e instanceof OrderNotFoundException) {
+                throw (OrderNotFoundException) e;
+            }
             throw new OrdersDatabaseException("Error updating order with id " + order.id(), e);
-        }
-    }
-
-    private void increaseStock(Connection conn, OrderItem item) throws SQLException {
-        String sql = "UPDATE books SET stock = stock + ? WHERE isbn = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, item.quantity());
-            pstmt.setString(2, item.isbn().getValue());
-            pstmt.executeUpdate();
+        } finally {
+            closeConnection(conn);
         }
     }
 
     @Override
     public Order cancelOrder(int id) {
-        Order order = getOrder(id); // Puede lanzar OrderNotFoundException si no existe
+        Order order = getOrder(id);
         String sqlDeleteItems = "DELETE FROM order_items WHERE order_id = ?";
         String sqlDeleteOrder = "DELETE FROM orders WHERE id = ?";
         String sqlUpdateStock = "UPDATE books SET stock = stock + ? WHERE isbn = ?";
 
-        try (Connection conn = connect()) {
+        Connection conn = null;
+        try {
+            conn = connect();
             conn.setAutoCommit(false);
 
-            // Repone stock de cada libro en el pedido
             if (order.items() != null) {
                 try (PreparedStatement updateStockStmt = conn.prepareStatement(sqlUpdateStock)) {
                     for (OrderItem item : order.items()) {
@@ -314,10 +329,33 @@ public class PostgreSQLOrderRepository implements OrderRepository {
             }
 
             conn.commit();
+            conn.setAutoCommit(true);
             return order;
 
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    throw new OrdersDatabaseException("Error rolling back transaction during cancel", rollbackEx);
+                }
+            }
             throw new OrdersDatabaseException("Error canceling order with id " + id, e);
+        } finally {
+            closeConnection(conn);
+        }
+    }
+
+    private void closeConnection(Connection conn) {
+        if (conn != null) {
+            try {
+                if (!conn.getAutoCommit()) {
+                    conn.setAutoCommit(true);
+                }
+                conn.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing connection: " + e.getMessage());
+            }
         }
     }
 }

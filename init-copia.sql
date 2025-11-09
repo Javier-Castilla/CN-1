@@ -35,4 +35,27 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 -- =============================================
 -- DATOS DE PRUEBA
--- ============================================
+-- =============================================
+
+-- Books (ISBN válidos según tu clase)
+INSERT INTO books (isbn, title, author, publisher, stock) VALUES
+('9780132350884', 'Clean Code', 'Robert C. Martin', 'Prentice Hall', 10),
+('9780134685991', 'Effective Java', 'Joshua Bloch', 'Addison-Wesley', 15),
+('9780596009205', 'Head First Design Patterns', 'Eric Freeman', 'O’Reilly Media', 8);
+
+-- Customers
+INSERT INTO customers (name, email) VALUES
+('Javier', 'javier@example.com'),
+('Ana', 'ana@example.com');
+
+-- Orders
+INSERT INTO orders (customer_id, order_date) VALUES
+(1, '2025-10-25 20:00:00'),
+(2, '2025-10-26 15:30:00');
+
+-- Order Items (referenciando ISBNs válidos)
+INSERT INTO order_items (order_id, book_isbn, quantity) VALUES
+(1, '9780132350884', 2),
+(1, '9780134685991', 1),
+(2, '9780134685991', 3),
+(2, '9780596009205', 1);

@@ -74,11 +74,11 @@ public class CustomerController {
         }
     }
 
-    @PutMapping
-    public ResponseEntity<Customer> updateCustomer(@RequestBody Customer customer) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Customer> updateCustomer(@PathVariable int id, @RequestBody Customer customer) {
         final Customer[] resultHolder = new Customer[1];
         try {
-            UpdateCustomerCommand.Input input = () -> customer;
+            UpdateCustomerCommand.Input input = () -> new Customer(id, customer.name(), customer.email());
             UpdateCustomerCommand.Output output = result -> resultHolder[0] = result;
             commandFactory.with(input, output).build("updateCustomer").execute();
             return ResponseEntity.ok(resultHolder[0]);
@@ -112,7 +112,6 @@ public class CustomerController {
         }
     }
 
-    // --- Helper method para construir respuestas de error ---
     private <T> ResponseEntity<T> buildError(HttpStatus status, String message) {
         return ResponseEntity.status(status).body((T) new ErrorResponse(status.value(), message));
     }

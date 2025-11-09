@@ -16,7 +16,8 @@ fi
 ECR_REPOSITORY=${ECR_REPOSITORY:-monolith}
 
 # Solicitar nombre de la pila de ECR
-read -p "Ingrese el nombre de la pila de ECR: " STACK_NAME_ECR
+read -p "Ingrese el nombre de la pila de ECR (por defecto ECR-Monolith): " STACK_NAME_ECR
+STACK_NAME_ECR=${STACK_NAME_ECR:-ECR-Lambdas}
 
 # Archivos de plantilla
 TEMPLATE_FILE_ECR="ecr.yml"

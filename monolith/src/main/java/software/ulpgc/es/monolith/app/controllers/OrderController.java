@@ -58,6 +58,8 @@ public class OrderController {
             return buildError(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (OrdersDatabaseException e) {
             return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Error updating order");
+        }catch (Exception e) {
+            return buildError(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 
@@ -70,7 +72,6 @@ public class OrderController {
             commandFactory.with(input, output)
                     .build("deleteOrder")
                     .execute();
-
             if (resultHolder[0] != null) {
                 return ResponseEntity.ok(resultHolder[0]);
             } else {

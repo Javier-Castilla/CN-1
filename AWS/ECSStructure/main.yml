@@ -263,556 +263,793 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: bookstore-api
-      Description: API for bookstore
+      Body:
+        openapi: "3.0.1"
+        info:
+          title: "Bookstore API"
+          version: "1.0"
+        paths:
+          /books:
+            get:
+              summary: "Get all books"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "List of books"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Book"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/books"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                passthroughBehavior: when_no_match
 
-####################
-#### RESOURCES #####
-####################
-  BooksResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !GetAtt API.RootResourceId
-      PathPart: books
+            post:
+              summary: "Create a new book"
+              security:
+                - api_key: [ ]
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Book"
+              responses:
+                '201':
+                  description: "Book created"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Book"
+                '400':
+                  description: "Bad request"
+                '409':
+                  description: "Duplicate ISBN book"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: POST
+                uri: !Sub "http://${NLB.DNSName}:8080/books"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                passthroughBehavior: when_no_match
 
-  BookResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !Ref BooksResource
-      PathPart: "{id}"
+            options:
+              summary: "CORS support for /books"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  CustomersResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !GetAtt API.RootResourceId
-      PathPart: customers
+          /books/{id}:
+            parameters:
+              - name: id
+                in: path
+                required: true
+                schema:
+                  type: string
+            get:
+              summary: "Get book by ISBN"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Book found"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Book"
+                '404':
+                  description: "Book not found"
+                '400':
+                  description: "Bad request"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.id: method.request.path.id
+                passthroughBehavior: when_no_match
 
-  CustomerResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !Ref CustomersResource
-      PathPart: "{id}"
+            put:
+              summary: "Update book by ISBN"
+              security:
+                - api_key: [ ]
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Book"
+              responses:
+                '200':
+                  description: "Book updated"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Book"
+                '404':
+                  description: "Book not found"
+                '400':
+                  description: "Bad request"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: PUT
+                uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.id: method.request.path.id
+                passthroughBehavior: when_no_match
 
-  CustomerOrdersResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !Ref CustomerResource
-      PathPart: orders
+            delete:
+              summary: "Delete book by ISBN"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Book deleted"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Book"
+                '404':
+                  description: "Book not found"
+                '400':
+                  description: "Bad request"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: DELETE
+                uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.id: method.request.path.id
+                passthroughBehavior: when_no_match
 
-  CustomerOrderResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !Ref CustomerOrdersResource
-      PathPart: "{orderId}"
+            options:
+              summary: "CORS support for /books/{id}"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  OrdersResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !GetAtt API.RootResourceId
-      PathPart: orders
+          # ======================
+          # /customers endpoints
+          # ======================
+          /customers:
+            get:
+              summary: "Get all customers"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "List of customers"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Customer"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/customers"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                passthroughBehavior: when_no_match
 
-  OrderResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref API
-      ParentId: !Ref OrdersResource
-      PathPart: "{id}"
+            post:
+              summary: "Create customer"
+              security:
+                - api_key: [ ]
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Customer"
+              responses:
+                '201':
+                  description: "Customer created"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Customer"
+                '400':
+                  description: "Bad request"
+                '409':
+                  description: "Duplicate customer"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: POST
+                uri: !Sub "http://${NLB.DNSName}:8080/customers"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                passthroughBehavior: when_no_match
 
-####################
-##### METHODS ######
-####################
-  PostBooksMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BooksResource
-      HttpMethod: POST
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub "http://${NLB.DNSName}:8080/books"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support for /customers"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  PostCustomersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomersResource
-      HttpMethod: POST
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+          /customers/{customerId}:
+            parameters:
+              - name: customerId
+                in: path
+                required: true
+                schema:
+                  type: integer
+            get:
+              summary: "Get customer by ID"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Customer found"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Customer"
+                '404':
+                  description: "Customer not found"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                passthroughBehavior: when_no_match
 
-  PostCustomerOrdersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrdersResource
-      HttpMethod: POST
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            put:
+              summary: "Update customer"
+              security:
+                - api_key: [ ]
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Customer"
+              responses:
+                '200':
+                  description: "Customer updated"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Customer"
+                '404':
+                  description: "Customer not found"
+                '400':
+                  description: "Bad request"
+                '409':
+                  description: "Duplicate customer"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: PUT
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                passthroughBehavior: when_no_match
 
-  GetBooksMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BooksResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/books"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            delete:
+              summary: "Delete customer"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Customer deleted"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Customer"
+                '404':
+                  description: "Customer not found"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: DELETE
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                passthroughBehavior: when_no_match
 
-  GetBookMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BookResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support for /customers/{customerId}"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  GetCustomersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomersResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+          # ======================
+          # /customers/{customerId}/orders
+          # ======================
+          /customers/{customerId}/orders:
+            parameters:
+              - name: customerId
+                in: path
+                required: true
+                schema:
+                  type: integer
+            get:
+              summary: "Get all orders for a customer"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "List of orders"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Order"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                passthroughBehavior: when_no_match
 
-  GetCustomerMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            post:
+              summary: "Create order for customer"
+              security:
+                - api_key: [ ]
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/Order"
+              responses:
+                '201':
+                  description: "Order created"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Order"
+                '400':
+                  description: "Bad request or insufficient stock"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: POST
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                passthroughBehavior: when_no_match
 
-  GetCustomerOrdersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrdersResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  GetCustomerOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrderResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders/{orderId}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+          /customers/{customerId}/orders/{orderId}:
+            parameters:
+              - name: customerId
+                in: path
+                required: true
+                schema:
+                  type: integer
+              - name: orderId
+                in: path
+                required: true
+                schema:
+                  type: integer
+            get:
+              summary: "Get order by ID for customer"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Order found"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Order"
+                '404':
+                  description: "Order not found"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders/{orderId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.customerId: method.request.path.customerId
+                  integration.request.path.orderId: method.request.path.orderId
+                passthroughBehavior: when_no_match
 
-  GetOrdersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref OrdersResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: GET
-        Uri: !Sub "http://${NLB.DNSName}:8080/orders"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  PutBookMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BookResource
-      HttpMethod: PUT
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: PUT
-        Uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+          # ======================
+          # /orders endpoints
+          # ======================
+          /orders:
+            get:
+              summary: "Get all orders"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "List of orders"
+                  content:
+                    application/json:
+                      schema:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Order"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: GET
+                uri: !Sub "http://${NLB.DNSName}:8080/orders"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                passthroughBehavior: when_no_match
 
-  PutCustomerMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerResource
-      HttpMethod: PUT
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: PUT
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  PutOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref OrderResource
-      HttpMethod: PUT
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: PUT
-        Uri: !Sub "http://${NLB.DNSName}:8080/orders/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+          /orders/{orderId}:
+            parameters:
+              - name: orderId
+                in: path
+                required: true
+                schema:
+                  type: integer
+            put:
+              summary: "Update order by ID"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Order found"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Order"
+                '400':
+                  description: "Insufficient stock"
+                '404':
+                  description: "Order not found"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: PUT
+                uri: !Sub "http://${NLB.DNSName}:8080/orders/{orderId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.orderId: method.request.path.orderId
+                passthroughBehavior: when_no_match
 
-  DeleteBookMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BookResource
-      HttpMethod: DELETE
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: DELETE
-        Uri: !Sub "http://${NLB.DNSName}:8080/books/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            delete:
+              summary: "Delete order by ID for customer"
+              security:
+                - api_key: [ ]
+              responses:
+                '200':
+                  description: "Order deleted"
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Order"
+                '404':
+                  description: "Order not found"
+                '500':
+                  description: "Internal server error"
+              x-amazon-apigateway-integration:
+                type: http_proxy
+                httpMethod: DELETE
+                uri: !Sub "http://${NLB.DNSName}:8080/orders/{orderId}"
+                connectionType: VPC_LINK
+                connectionId: !Ref VPCLink
+                requestParameters:
+                  integration.request.path.orderId: method.request.path.orderId
+                passthroughBehavior: when_no_match
 
-  DeleteCustomerMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerResource
-      HttpMethod: DELETE
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: DELETE
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
+            options:
+              summary: "CORS support"
+              responses:
+                '200':
+                  description: "CORS preflight"
+                  headers:
+                    Access-Control-Allow-Headers:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Methods:
+                      schema:
+                        type: string
+                    Access-Control-Allow-Origin:
+                      schema:
+                        type: string
+              x-amazon-apigateway-integration:
+                type: mock
+                requestTemplates:
+                  application/json: '{"statusCode":200}'
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
+                      method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
 
-  DeleteCustomerOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrderResource
-      HttpMethod: DELETE
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: DELETE
-        Uri: !Sub "http://${NLB.DNSName}:8080/customers/{customerId}/orders/{orderId}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
-
-  DeleteOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref OrderResource
-      HttpMethod: DELETE
-      AuthorizationType: NONE
-      ApiKeyRequired: true
-      Integration:
-        Type: HTTP_PROXY
-        IntegrationHttpMethod: DELETE
-        Uri: !Sub "http://${NLB.DNSName}:8080/orders/{id}"
-        ConnectionType: VPC_LINK
-        ConnectionId: !Ref VPCLink
-
-####################
-##### OPTIONS ######
-####################
-  OptionsBooksMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BooksResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsBookMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref BookResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsCustomersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomersResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsCustomerMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsCustomerOrdersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrdersResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsCustomerOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref CustomerOrderResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsOrdersMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref OrdersResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
-
-  OptionsOrderMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref API
-      ResourceId: !Ref OrderResource
-      HttpMethod: OPTIONS
-      AuthorizationType: NONE
-      ApiKeyRequired: false
-      Integration:
-        Type: MOCK
-        IntegrationResponses:
-          - StatusCode: 200
-            ResponseParameters:
-              method.response.header.Access-Control-Allow-Headers: "'Content-Type,x-api-key'"
-              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
-              method.response.header.Access-Control-Allow-Origin: "'*'"
-            ResponseTemplates:
-              application/json: ""
-        RequestTemplates:
-          application/json: '{"statusCode": 200}'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Headers: true
-            method.response.header.Access-Control-Allow-Methods: true
-            method.response.header.Access-Control-Allow-Origin: true
+        components:
+          securitySchemes:
+            api_key:
+              type: apiKey
+              name: x-api-key
+              in: header
+          schemas:
+            Book:
+              type: object
+              required:
+                - isbn
+                - title
+                - author
+                - publisher
+                - stock
+              properties:
+                isbn:
+                  $ref: "#/components/schemas/ISBN"
+                title:
+                  type: string
+                author:
+                  type: string
+                price:
+                  type: number
+                  format: integer
+            ISBN:
+              type: object
+              required:
+                - value
+              properties:
+                value:
+                  type: string
+            Customer:
+              type: object
+              required:
+                - id
+                - name
+                - email
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+            Order:
+              type: object
+              required:
+                - id
+                - customerId
+                - items
+              properties:
+                id:
+                  type: integer
+                customerId:
+                  type: integer
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/OrderItem"
+                total:
+                  type: number
+                  format: integer
+            OrderItem:
+              type: object
+              required:
+                - isbn
+                - quantity
+              properties:
+                isbn:
+                  $ref: "#/components/schemas/ISBN"
+                quantity:
+                  type: integer
 
   APIDeployment:
     Type: AWS::ApiGateway::Deployment
-    DependsOn:
-      - GetBooksMethod
-      - GetBookMethod
-      - GetCustomersMethod
-      - GetCustomerMethod
-      - GetCustomerOrdersMethod
-      - GetCustomerOrderMethod
-      - PostBooksMethod
-      - PostCustomersMethod
-      - PostCustomerOrdersMethod
     Properties:
       RestApiId: !Ref API
 
@@ -849,10 +1086,6 @@ Outputs:
   APIEndpoint:
     Description: API Gateway URL
     Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod"
-
-  APIKeyId:
-    Description: API Key ID
-    Value: !Ref APIKey
 
   EndpointDB:
     Value: !GetAtt DB.Endpoint.Address

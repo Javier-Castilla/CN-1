@@ -8,8 +8,8 @@ if [[ -f "params.sh" ]]; then
 fi
 
 # Solicitar nombre de la pila de Lambda/ECR
-read -p "Ingrese el nombre de la pila de ECR (por defecto ECR-Lambdas): " STACK_NAME_LAMBDA
-STACK_NAME_LAMBDA=${STACK_NAME_LAMBDA:-ECR-Lambdas}
+read -p "Ingrese el nombre de la pila de ECR (por defecto ECR-Lambdas): " STACK_NAME__ECR_LAMBDA
+STACK_NAME__ECR_LAMBDA=${STACK_NAME__ECR_LAMBDA:-ECR-Lambdas}
 
 TEMPLATE_FILE_ECR="ecr.yml"
 TEMPLATE_FILE="main.yml"
@@ -20,20 +20,20 @@ ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/LabRole"
 
 echo "============================================="
-echo "Creando stack '${STACK_NAME_LAMBDA}'"
+echo "Creando stack '${STACK_NAME__ECR_LAMBDA}'"
 echo "============================================="
 
 aws cloudformation create-stack \
-  --stack-name "${STACK_NAME_LAMBDA}" \
+  --stack-name "${STACK_NAME__ECR_LAMBDA}" \
   --template-body "file://${TEMPLATE_FILE_ECR}" \
   --role-arn "${ROLE_ARN}" \
   --capabilities CAPABILITY_NAMED_IAM
 
-echo "Esperando a que la pila '${STACK_NAME_LAMBDA}' se cree..."
-if aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME_LAMBDA}"; then
-  echo "✅ La pila ${STACK_NAME_LAMBDA} se creó correctamente."
+echo "Esperando a que la pila '${STACK_NAME__ECR_LAMBDA}' se cree..."
+if aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME__ECR_LAMBDA}"; then
+  echo "✅ La pila ${STACK_NAME__ECR_LAMBDA} se creó correctamente."
 else
-  echo "❌ Error: la creación de la pila ${STACK_NAME_LAMBDA} falló."
+  echo "❌ Error: la creación de la pila ${STACK_NAME__ECR_LAMBDA} falló."
   exit 1
 fi
 
@@ -64,7 +64,7 @@ if aws cloudformation create-stack \
 
   echo "✅ Stack creado exitosamente!"
   echo "Comandos para verificar:"
-  echo "aws cloudformation describe-stacks --stack-name ${STACK_NAME_LAMBDA}"
+  echo "aws cloudformation describe-stacks --stack-name ${STACK_NAME__ECR_LAMBDA}"
   echo "aws cloudformation describe-stacks --stack-name ${STACK_NAME}"
 
 else

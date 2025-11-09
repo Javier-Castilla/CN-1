@@ -24,9 +24,7 @@ public class BookController {
         this.commandFactory = commandFactory;
     }
 
-    // =============================================
-    // GET /books
-    // =============================================
+
     @GetMapping
     public ResponseEntity<?> getAllBooks() {
         final List<Book>[] resultHolder = new List[1];
@@ -41,9 +39,6 @@ public class BookController {
         }
     }
 
-    // =============================================
-    // GET /books/{isbn}
-    // =============================================
     @GetMapping("/{isbn}")
     public ResponseEntity<?> getBook(@PathVariable String isbn) {
         final Book[] resultHolder = new Book[1];
@@ -66,9 +61,6 @@ public class BookController {
         }
     }
 
-    // =============================================
-    // POST /books
-    // =============================================
     @PostMapping
     public ResponseEntity<?> addBook(@RequestBody Book book) {
         final Book[] resultHolder = new Book[1];
@@ -89,9 +81,6 @@ public class BookController {
         }
     }
 
-    // =============================================
-    // PUT /books/{isbn}
-    // =============================================
     @PutMapping("/{isbn}")
     public ResponseEntity<?> updateBook(@PathVariable String isbn, @RequestBody Book book) {
         final Book[] resultHolder = new Book[1];
@@ -114,9 +103,6 @@ public class BookController {
         }
     }
 
-    // =============================================
-    // DELETE /books/{isbn}
-    // =============================================
     @DeleteMapping("/{isbn}")
     public ResponseEntity<?> deleteBook(@PathVariable String isbn) {
         final Book[] resultHolder = new Book[1];
@@ -139,15 +125,10 @@ public class BookController {
         }
     }
 
-    // =============================================
-    // Helper method for building error responses
-    // =============================================
     private <T> ResponseEntity<T> buildError(HttpStatus status, String message) {
-        // Cast seguro porque solo se usa para respuestas de error
         return ResponseEntity.status(status)
                 .body((T) new ErrorResponse(status.value(), message));
     }
 
-    // Simple DTO for error messages
     private record ErrorResponse(int status, String message) {}
 }
