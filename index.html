@@ -10,19 +10,22 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 min-h-screen">
 <div id="notification-container"></div>
 <div id="app"></div>
 <div id="modal-root"></div>
+
 <script>
     const state = {
         activeTab: 'books',
         config: {
-            baseUrl: sessionStorage.getItem('api_baseUrl') || '',
-            apiKey: sessionStorage.getItem('api_key') || ''
+            baseUrl: sessionStorage.getItem('apibaseUrl') || '',
+            apiKey: sessionStorage.getItem('apikey') || ''
         },
         showConfig: false,
         books: [],
@@ -56,15 +59,15 @@
 
         const bgColor = state.notification.type === 'error' ? 'bg-red-500' : 'bg-green-500';
         notifContainer.innerHTML = `
-            <div class="fixed top-4 right-4 z-50 animate-slide-in">
-                <div class="${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>${state.notification.message}</span>
+                <div class="fixed top-4 right-4 z-50 animate-slide-in">
+                    <div class="${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>${state.notification.message}</span>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
     }
 
     async function apiCall(endpoint, method = 'GET', body = null) {
@@ -84,14 +87,16 @@
                 options.body = JSON.stringify(body);
             }
 
-            const response = await fetch(`${state.config.baseUrl}${endpoint}`, options);
-            const data = await response.json();
+            const response = await fetch(`${state.config.baseUrl}/${endpoint}`, options);
 
             if (!response.ok) {
-                throw new Error(data.message || 'Error en la petición');
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
 
-            return data;
+            if (method === 'DELETE') return null;
+
+            return await response.json();
         } catch (error) {
             showNotification(`Error: ${error.message}`);
             throw error;
@@ -106,11 +111,11 @@
 
         try {
             if (state.activeTab === 'books') {
-                state.books = await apiCall('/books');
+                state.books = await apiCall('books');
             } else if (state.activeTab === 'customers') {
-                state.customers = await apiCall('/customers');
+                state.customers = await apiCall('customers');
             } else if (state.activeTab === 'orders') {
-                state.orders = await apiCall('/orders');
+                state.orders = await apiCall('orders');
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -127,10 +132,9 @@
         state.config.baseUrl = baseUrlInput.value.trim();
         state.config.apiKey = apiKeyInput.value.trim();
 
-        console.log('Guardando URL:', state.config.baseUrl); // Para debug
+        sessionStorage.setItem('apibaseUrl', state.config.baseUrl);
+        sessionStorage.setItem('apikey', state.config.apiKey);
 
-        sessionStorage.setItem('api_baseUrl', state.config.baseUrl);
-        sessionStorage.setItem('api_key', state.config.apiKey);
         state.showConfig = false;
         render();
         loadData();
@@ -138,8 +142,15 @@
 
     async function handleCreate() {
         state.modalMode = 'create';
+
         if (state.activeTab === 'books') {
-            state.currentItem = { isbn: '', title: '', author: '', publisher: '', stock: 0 };
+            state.currentItem = {
+                isbn: '',
+                title: '',
+                author: '',
+                publisher: '',
+                stock: 0
+            };
             state.showModal = true;
             renderModal();
         } else if (state.activeTab === 'customers') {
@@ -147,15 +158,18 @@
             state.showModal = true;
             renderModal();
         } else {
-            // Cargar libros si no están cargados
             if (state.books.length === 0) {
                 try {
-                    state.books = await apiCall('/books');
+                    state.books = await apiCall('books');
                 } catch (error) {
                     console.error('Error loading books:', error);
                 }
             }
-            state.currentItem = { customerId: '', items: [{ isbn: '', quantity: 1 }] };
+
+            state.currentItem = {
+                customerId: '',
+                items: [{ isbn: '', quantity: 1 }]
+            };
             state.showModal = true;
             renderModal();
         }
@@ -165,12 +179,12 @@
         state.modalMode = 'edit';
         const data = state.activeTab === 'books' ? state.books :
             state.activeTab === 'customers' ? state.customers : state.orders;
+
         state.currentItem = JSON.parse(JSON.stringify(data[idx]));
 
-        // Cargar libros si estamos editando una orden
         if (state.activeTab === 'orders' && state.books.length === 0) {
             try {
-                state.books = await apiCall('/books');
+                state.books = await apiCall('books');
             } catch (error) {
                 console.error('Error loading books:', error);
             }
@@ -190,68 +204,198 @@
         try {
             if (state.activeTab === 'books') {
                 const isbn = item.isbn?.value || item.isbn;
-                await apiCall(`/books/${isbn}`, 'DELETE');
+                await apiCall(`books/${isbn}`, 'DELETE');
             } else if (state.activeTab === 'customers') {
-                await apiCall(`/customers/${item.id}`, 'DELETE');
+                await apiCall(`customers/${item.id}`, 'DELETE');
             } else if (state.activeTab === 'orders') {
-                await apiCall(`/orders/${item.id}`, 'DELETE');
+                await apiCall(`orders/${item.id}`, 'DELETE');
             }
+
             await loadData();
         } catch (error) {
             console.error('Error deleting:', error);
         }
     }
 
+    async function viewCustomerOrders(customerId) {
+        try {
+            state.loading = true;
+            renderCustomerOrdersModal(customerId, []);
+
+            const customerOrders = await apiCall(`customers/${customerId}/orders`);
+
+            state.loading = false;
+            renderCustomerOrdersModal(customerId, customerOrders);
+        } catch (error) {
+            state.loading = false;
+            showNotification(`Error al cargar pedidos del cliente: ${error.message}`);
+            closeCustomerOrdersModal();
+        }
+    }
+
+    function closeCustomerOrdersModal() {
+        const modalRoot = document.getElementById('modal-root');
+        modalRoot.innerHTML = '';
+    }
+
+    function renderCustomerOrdersModal(customerId, orders) {
+        const modalRoot = document.getElementById('modal-root');
+
+        const ordersContent = state.loading ? `
+                <div class="text-center py-8">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                    <p class="mt-4 text-gray-600">Cargando pedidos...</p>
+                </div>
+            ` : orders.length === 0 ? `
+                <div class="text-center py-8 text-gray-500">
+                    <p>No se encontraron pedidos para este cliente</p>
+                </div>
+            ` : orders.map(order => `
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg mb-3 border border-purple-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-800">Pedido #${order.id}</h4>
+                            <p class="text-sm text-gray-500">${new Date(order.date).toLocaleDateString('es-ES')}</p>
+                        </div>
+                        <span class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                            ${order.items.length} ${order.items.length === 1 ? 'artículo' : 'artículos'}
+                        </span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-purple-200">
+                        <p class="text-sm font-medium mb-2 text-gray-700">Artículos</p>
+                        <div class="space-y-1">
+                            ${order.items.map(item => `
+                                <div class="flex justify-between text-sm bg-white p-2 rounded">
+                                    <span class="text-gray-700">ISBN: ${item.isbn.value}</span>
+                                    <span class="text-gray-600 font-medium">Cantidad: ${item.quantity}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+        modalRoot.innerHTML = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-80vh overflow-y-auto">
+                        <div class="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-xl">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-gray-800">Pedidos del Cliente</h2>
+                                    <p class="text-sm text-gray-500 mt-1">ID del Cliente: ${customerId}</p>
+                                </div>
+                                <button onclick="closeCustomerOrdersModal()" class="text-gray-400 hover:text-gray-600 transition">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            ${ordersContent}
+                        </div>
+                        <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 rounded-b-xl">
+                            <button onclick="closeCustomerOrdersModal()" class="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+    }
+
+    // ✅ FUNCIÓN updateField CORREGIDA
+    function updateField(field, value) {
+        if (state.currentItem) {
+            // Si es el campo ISBN, guardarlo como string simple
+            if (field === 'isbn') {
+                state.currentItem.isbn = value;  // Guardar como string
+            } else {
+                state.currentItem[field] = value;
+            }
+        }
+    }
+
+    // ✅ FUNCIÓN updateOrderItem CORREGIDA
+    function updateOrderItem(idx, field, value) {
+        if (field === 'isbn') {
+            // Guardar el ISBN como objeto con value
+            state.currentItem.items[idx][field] = { value: value };
+        } else {
+            state.currentItem.items[idx][field] = value;
+        }
+    }
+
+    // ✅ FUNCIÓN handleSave CORREGIDA
     async function handleSave() {
         try {
-            collectModalData();
-
             if (state.activeTab === 'books') {
+                // Determinar el valor del ISBN (puede ser string u objeto)
+                let isbnValue;
+                if (typeof state.currentItem.isbn === 'object' && state.currentItem.isbn !== null) {
+                    isbnValue = state.currentItem.isbn.value;
+                } else {
+                    isbnValue = state.currentItem.isbn;
+                }
+
                 const bookData = {
-                    isbn: {value: state.currentItem.isbn},
+                    isbn: {
+                        value: isbnValue
+                    },
                     title: state.currentItem.title,
                     author: state.currentItem.author,
-                    publisher: state.currentItem.publisher,
-                    stock: parseInt(state.currentItem.stock)
+                    publisher: state.currentItem.publisher || '',
+                    stock: parseInt(state.currentItem.stock) || 0
                 };
 
-                console.log(bookData)
-
                 if (state.modalMode === 'create') {
-                    await apiCall('/books', 'POST', bookData);
+                    await apiCall('books', 'POST', bookData);
                 } else {
-                    await apiCall(`/books/${bookData.isbn.value}`, 'PUT', bookData);
+                    await apiCall(`books/${isbnValue}`, 'PUT', bookData);
                 }
             } else if (state.activeTab === 'customers') {
                 if (state.modalMode === 'create') {
-                    await apiCall('/customers', 'POST', state.currentItem);
+                    await apiCall('customers', 'POST', state.currentItem);
                 } else {
-                    await apiCall('/customers', 'PUT', state.currentItem);
+                    await apiCall(`customers/${state.currentItem.id}`, 'PUT', state.currentItem);
                 }
-            } else if (state.activeTab === 'orders') {
+            } else {
+                const customerId = parseInt(state.currentItem.customerId);
+
+                // ✅ CORREGIDO: Asegurar que los ISBNs de items sean objetos
+                const items = state.currentItem.items.map(item => {
+                    let isbnValue;
+                    if (typeof item.isbn === 'object' && item.isbn !== null) {
+                        isbnValue = item.isbn.value;
+                    } else {
+                        isbnValue = item.isbn;
+                    }
+
+                    return {
+                        isbn: { value: isbnValue },
+                        quantity: parseInt(item.quantity) || 1
+                    };
+                });
+
                 const orderData = {
-                    customerId: parseInt(state.currentItem.customerId),
-                    items: state.currentItem.items.map(item => ({
-                        isbn: { value: item.isbn?.value || item.isbn },
-                        quantity: parseInt(item.quantity)
-                    }))
+                    customerId: customerId,
+                    items: items
                 };
 
                 if (state.modalMode === 'create') {
-                    await apiCall(`/customers/${orderData.customerId}/orders`, 'POST', orderData);
+                    await apiCall(`customers/${customerId}/orders`, 'POST', orderData);
                 } else {
                     orderData.id = state.currentItem.id;
                     orderData.date = state.currentItem.date;
-                    await apiCall(`/orders/${state.currentItem.id}`, 'PUT', orderData);
+                    await apiCall(`orders/${state.currentItem.id}`, 'PUT', orderData);
                 }
             }
 
-            state.showModal = false;
-            renderModal();
+            showNotification(`${state.activeTab.slice(0, -1)} ${state.modalMode === 'create' ? 'created' : 'updated'} successfully`, 'success');
+            closeModal();
             await loadData();
-            showNotification('Guardado exitosamente', 'success');
         } catch (error) {
-            console.error('Error saving:', error);
+            showNotification(`Error saving: ${error.message}`);
         }
     }
 
@@ -277,21 +421,6 @@
         });
     }
 
-    function collectModalData() {
-        if (state.activeTab === 'books') {
-            state.currentItem.isbn = document.getElementById('isbn')?.value || state.currentItem.isbn;
-            state.currentItem.title = document.getElementById('title')?.value || '';
-            state.currentItem.author = document.getElementById('author')?.value || '';
-            state.currentItem.publisher = document.getElementById('publisher')?.value || '';
-            state.currentItem.stock = parseInt(document.getElementById('stock')?.value || 0);
-        } else if (state.activeTab === 'customers') {
-            state.currentItem.name = document.getElementById('name')?.value || '';
-            state.currentItem.email = document.getElementById('email')?.value || '';
-        } else {
-            state.currentItem.customerId = document.getElementById('customerId')?.value || '';
-        }
-    }
-
     function addOrderItem() {
         state.currentItem.items.push({ isbn: '', quantity: 1 });
         renderModal();
@@ -312,7 +441,6 @@
     }
 
     function renderConfigScreen() {
-        // Escapar valores para evitar problemas con comillas
         const baseUrlValue = (state.config.baseUrl || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
         const apiKeyValue = (state.config.apiKey || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 
@@ -326,34 +454,16 @@
                             </svg>
                         </div>
                         <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Configuración API</h2>
-
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">URL Base del Backend</label>
-                                <input
-                                    type="text"
-                                    id="baseUrl"
-                                    value="${baseUrlValue}"
-                                    placeholder="http://localhost:8080"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                />
+                                <input type="text" id="baseUrl" value="${baseUrlValue}" placeholder="http://localhost:8080" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                             </div>
-
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">API Key (opcional)</label>
-                                <input
-                                    type="password"
-                                    id="apiKey"
-                                    value="${apiKeyValue}"
-                                    placeholder="Tu API Key"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                />
+                                <input type="password" id="apiKey" value="${apiKeyValue}" placeholder="Tu API Key" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                             </div>
-
-                            <button
-                                onclick="saveConfig();"
-                                class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition"
-                            >
+                            <button onclick="saveConfig()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition">
                                 Guardar Configuración
                             </button>
                         </div>
@@ -374,61 +484,81 @@
         }`;
 
         let fields = '';
+
         if (state.activeTab === 'books') {
             const isbnVal = state.currentItem.isbn?.value || state.currentItem.isbn || '';
             fields = `
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">ISBN</label>
-                        <input type="text" id="isbn" value="${isbnVal}"
+                        <input type="text"
+                            id="isbn"
+                            value="${isbnVal}"
+                            oninput="updateField('isbn', this.value)"
                             ${state.modalMode === 'edit' ? 'disabled' : ''}
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100" />
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Título</label>
-                        <input type="text" id="title" value="${state.currentItem.title || ''}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="text"
+                            id="title"
+                            value="${state.currentItem.title || ''}"
+                            oninput="updateField('title', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Autor</label>
-                        <input type="text" id="author" value="${state.currentItem.author || ''}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="text"
+                            id="author"
+                            value="${state.currentItem.author || ''}"
+                            oninput="updateField('author', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Editorial</label>
-                        <input type="text" id="publisher" value="${state.currentItem.publisher || ''}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="text"
+                            id="publisher"
+                            value="${state.currentItem.publisher || ''}"
+                            oninput="updateField('publisher', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Stock</label>
-                        <input type="number" id="stock" value="${state.currentItem.stock || 0}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="number"
+                            id="stock"
+                            value="${state.currentItem.stock || 0}"
+                            oninput="updateField('stock', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                 `;
         } else if (state.activeTab === 'customers') {
             fields = `
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
-                        <input type="text" id="name" value="${state.currentItem.name || ''}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="text"
+                            id="name"
+                            value="${state.currentItem.name || ''}"
+                            oninput="updateField('name', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" id="email" value="${state.currentItem.email || ''}"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                        <input type="email"
+                            id="email"
+                            value="${state.currentItem.email || ''}"
+                            oninput="updateField('email', this.value)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                     </div>
                 `;
         } else {
             const itemsHtml = (state.currentItem.items || []).map((item, idx) => {
                 const isbnValue = item.isbn?.value || item.isbn || '';
-                // Obtener ISBNs ya seleccionados en otros items
                 const selectedIsbns = state.currentItem.items
                     .map((i, iIdx) => iIdx !== idx ? (i.isbn?.value || i.isbn) : null)
                     .filter(Boolean);
 
                 return `
                         <div class="flex gap-2 mb-2">
-                            <select onchange="updateOrderItem(${idx}, 'isbn', this.value)"
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <select onchange="updateOrderItem(${idx}, 'isbn', this.value)" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                                 <option value="">Selecciona un libro...</option>
                                 ${state.books.map(book => {
                     const bookIsbn = book.isbn?.value || book.isbn;
@@ -438,11 +568,8 @@
                     return `<option value="${bookIsbn}" ${selected} ${disabled}>${book.title} - ${bookIsbn} ${stockInfo}</option>`;
                 }).join('')}
                             </select>
-                            <input type="number" placeholder="Cantidad" value="${item.quantity || 1}"
-                                onchange="updateOrderItem(${idx}, 'quantity', parseInt(this.value))"
-                                class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
-                            <button onclick="removeOrderItem(${idx})" type="button"
-                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
+                            <input type="number" placeholder="Cantidad" value="${item.quantity || 1}" onchange="updateOrderItem(${idx}, 'quantity', parseInt(this.value))" class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button onclick="removeOrderItem(${idx})" type="button" class="p-2 text-red-600 hover:bg-red-50 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                 </svg>
@@ -454,15 +581,17 @@
             fields = `
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Customer ID</label>
-                        <input type="number" id="customerId" value="${state.currentItem.customerId || ''}"
+                        <input type="number"
+                            id="customerId"
+                            value="${state.currentItem.customerId || ''}"
+                            oninput="updateField('customerId', this.value)"
                             ${state.modalMode === 'edit' ? 'disabled' : ''}
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100" />
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:bg-gray-100">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Items</label>
                         <div>${itemsHtml}</div>
-                        <button onclick="addOrderItem()" type="button"
-                            class="mt-2 text-purple-600 hover:text-purple-700 font-medium flex items-center">
+                        <button onclick="addOrderItem()" type="button" class="mt-2 text-purple-600 hover:text-purple-700 font-medium flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
@@ -474,7 +603,7 @@
 
         document.getElementById('modal-root').innerHTML = `
                 <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-in">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-90vh overflow-y-auto animate-slide-in">
                         <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                             <h3 class="text-2xl font-bold text-gray-900">${title}</h3>
                             <button onclick="closeModal()" type="button" class="text-gray-400 hover:text-gray-600">
@@ -483,18 +612,14 @@
                                 </svg>
                             </button>
                         </div>
-
                         <div class="p-6 space-y-4">
                             ${fields}
                         </div>
-
                         <div class="sticky bottom-0 bg-gray-50 px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
-                            <button onclick="closeModal()" type="button"
-                                class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition font-medium">
+                            <button onclick="closeModal()" type="button" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition font-medium">
                                 Cancelar
                             </button>
-                            <button onclick="handleSave()" type="button"
-                                class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-medium flex items-center">
+                            <button onclick="handleSave()" type="button" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition font-medium flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                 </svg>
@@ -510,7 +635,7 @@
         const data = getFilteredData();
 
         if (state.loading) {
-            document.getElementById('table-content').innerHTML = '<div class="text-center py-12"><div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>';
+            document.getElementById('table-content').innerHTML = `<div class="text-center py-12"><div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div></div>`;
             return;
         }
 
@@ -526,16 +651,18 @@
                     <th class="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Stock</th>
                     <th class="px-6 py-4 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 `;
+
             rows = data.map((item, idx) => {
                 const stockClass = item.stock > 10 ? 'bg-green-100 text-green-800' :
                     item.stock > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
-                const isbnVal = item.isbn?.value || item.isbn;
+                const isbnVal = item.isbn?.value || item.isbn || '';
+
                 return `
                         <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${isbnVal}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.title}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.author}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.publisher}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.publisher || ''}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold ${stockClass}">${item.stock}</span>
                             </td>
@@ -561,12 +688,18 @@
                     <th class="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Email</th>
                     <th class="px-6 py-4 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 `;
+
             rows = data.map((item, idx) => `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${item.name}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.email}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="viewCustomerOrders(${item.id})" type="button" class="text-purple-600 hover:text-purple-900 mr-4 inline-block" title="Ver pedidos del cliente">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </button>
                             <button onclick="handleEdit(${idx})" type="button" class="text-blue-600 hover:text-blue-900 mr-4 inline-block">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -588,6 +721,7 @@
                     <th class="px-6 py-4 text-left text-xs font-medium text-white uppercase tracking-wider">Items</th>
                     <th class="px-6 py-4 text-right text-xs font-medium text-white uppercase tracking-wider">Acciones</th>
                 `;
+
             rows = data.map((item, idx) => `
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.id}</td>
@@ -645,12 +779,10 @@
     function handleTabChange(tab) {
         state.activeTab = tab;
         state.searchTerm = '';
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) {
-            searchInput.value = '';
-        }
 
-        // Actualizar la UI de los tabs
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.value = '';
+
         document.querySelectorAll('nav button').forEach((btn, idx) => {
             const tabs = ['books', 'customers', 'orders'];
             if (tabs[idx] === tab) {
@@ -686,15 +818,9 @@
             }
 
             return `
-                    <button
-                        onclick="handleTabChange('${tab.id}')"
-                        type="button"
-                        class="flex items-center space-x-2 py-4 px-3 border-b-2 font-medium transition ${
-                state.activeTab === tab.id
-                    ? 'border-purple-600 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }"
-                    >
+                    <button onclick="handleTabChange('${tab.id}')" type="button" class="flex items-center space-x-2 py-4 px-3 border-b-2 font-medium transition ${
+                state.activeTab === tab.id ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }">
                         ${icon}
                         <span>${tab.label}</span>
                     </button>
@@ -717,7 +843,6 @@
                         </div>
                     </div>
                 </header>
-
                 <div class="bg-white shadow">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <nav class="flex space-x-8">
@@ -725,7 +850,6 @@
                         </nav>
                     </div>
                 </div>
-
                 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div class="mb-6 flex gap-4">
                         <div class="flex-1 relative">
@@ -734,27 +858,15 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-                            <input
-                                type="text"
-                                id="search-input"
-                                value="${state.searchTerm}"
-                                oninput="handleSearchInput(event)"
-                                placeholder="Buscar..."
-                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            />
+                            <input type="text" id="search-input" value="${state.searchTerm}" oninput="handleSearchInput(event)" placeholder="Buscar..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
                         </div>
-                        <button
-                            onclick="handleCreate()"
-                            type="button"
-                            class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition flex items-center space-x-2 shadow-lg"
-                        >
+                        <button onclick="handleCreate()" type="button" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition flex items-center space-x-2 shadow-lg">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                             </svg>
                             <span>Añadir</span>
                         </button>
                     </div>
-
                     <div id="table-content"></div>
                 </main>
             `;
@@ -767,8 +879,8 @@
         state.showConfig = true;
     }
     render();
+
     if (state.config.baseUrl && !state.showConfig) {
-        console.log(state.config);
         loadData();
     }
 </script>

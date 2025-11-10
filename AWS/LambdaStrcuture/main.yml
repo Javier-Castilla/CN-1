@@ -8,6 +8,7 @@ Parameters:
 
   VpcId:
     Type: AWS::EC2::VPC::Id
+    Description: ID of VPC
 
   DBIdentifier:
     Type: String
@@ -17,6 +18,7 @@ Parameters:
   DBType:
     Type: String
     Default: postgresql
+    Description: DB type for
 
   DBName:
     Type: String
@@ -961,23 +963,3 @@ Outputs:
   APIEndpoint:
     Description: API Gateway URL
     Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod"
-
-  APIKeyId:
-    Description: API Key ID
-    Value: !Ref APIKey
-
-  EndpointDB:
-    Value: !GetAtt DB.Endpoint.Address
-    Description: DB endpoint
-
-  Port:
-    Value: !GetAtt DB.Endpoint.Port
-    Description: DB port
-
-  DBName:
-    Value: !Ref DBName
-    Description: DB name
-
-  DBUser:
-    Value: !Ref DBUser
-    Description: DB user

@@ -1086,19 +1086,3 @@ Outputs:
   APIEndpoint:
     Description: API Gateway URL
     Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod"
-
-  EndpointDB:
-    Value: !GetAtt DB.Endpoint.Address
-    Description: DB endpoint
-
-  Port:
-    Value: !GetAtt DB.Endpoint.Port
-    Description: DB port
-
-  DBName:
-    Value: !Ref DBName
-    Description: DB name
-
-  DBUser:
-    Value: !Ref DBUser
-    Description: DB user

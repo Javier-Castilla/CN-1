@@ -83,12 +83,12 @@ public class MainLambda implements RequestHandler<Map<String, Object>, Object> {
     }
 
     private Object handlePost(Map<String, Object> data) {
-        if (!data.containsKey("id") || !data.containsKey("title"))
+        if (!data.containsKey("isbn") || !data.containsKey("title"))
             throw new IllegalArgumentException("Incomplete data to create a book");
 
         final Book[] resultHolder = new Book[1];
 
-        String isbnValue = extractIsbn(data.get("id"));
+        String isbnValue = extractIsbn(data.get("isbn"));
 
         Book bookToSave = new Book(
                 new ISBN(isbnValue),

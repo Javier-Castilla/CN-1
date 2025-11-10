@@ -13,7 +13,7 @@ Resources:
     Properties:
       RepositoryName: !Ref ECRName
       ImageScanningConfiguration:
-        ScanOnPush: false
+        ScanOnPush: true
       LifecyclePolicy:
         LifecyclePolicyText: |
           {
@@ -36,8 +36,5 @@ Resources:
 
 Outputs:
   RepositoryUri:
-    Description: "URI del ECR"
+    Description: "ECR URI"
     Value: !GetAtt ECR.RepositoryUri
-  RepositoryName:
-    Description: "Nombre del ECR"
-    Value: !Ref ECR
