@@ -1,0 +1,1931 @@
+type: collection.insomnia.rest/5.0
+name: CN P1
+meta:
+  id: wrk_ee329cb6832642deaaa07e57246a1972
+  created: 1762796302565
+  modified: 1762796302565
+  description: ""
+collection:
+  - url: "{{url}}/customers"
+    name: All customers
+    meta:
+      id: req_e208a4fe2b324673a9f939cfdebd913a
+      created: 1761404481916
+      modified: 1762688940070
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647561.2656
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: All books
+    meta:
+      id: req_bf4ac55e3e3446afa86e0bed8f1afe5f
+      created: 1761416254517
+      modified: 1762687506859
+      isPrivate: false
+      description: ""
+      sortKey: -1761716549454.375
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders"
+    name: All orders
+    meta:
+      id: req_7b1b715cac314650b0693c2226c0ea6a
+      created: 1761487091794
+      modified: 1762697722021
+      isPrivate: false
+      description: ""
+      sortKey: -1761668609860.7812
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1"
+    name: Customer 1
+    meta:
+      id: req_ad549c22df2945f5b1271c4a51c506c4
+      created: 1761524591807
+      modified: 1762697727533
+      isPrivate: false
+      description: ""
+      sortKey: -1761660619928.5156
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780132350884"
+    name: Clean Code book
+    meta:
+      id: req_b479cc000a994574907aac49a76460fa
+      created: 1761524606727
+      modified: 1762689416179
+      isPrivate: false
+      description: ""
+      sortKey: -1761664614894.6484
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1/orders"
+    name: Customer 1 orders
+    meta:
+      id: req_7531c9fd59a84f5c924d7e616eaa6c0c
+      created: 1761524668400
+      modified: 1762697742493
+      isPrivate: false
+      description: ""
+      sortKey: -1761652629996.25
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780132350884"
+    name: Delete Clean Code book
+    meta:
+      id: req_5ab5f6e045224aabba6f0471cfa0a1be
+      created: 1761524791080
+      modified: 1762688881324
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647861.2656
+    method: DELETE
+    parameters:
+      - name: ""
+        value: ""
+        disabled: false
+        id: pair_6aaf5a8615254915a162ad40c1ebdaf5
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1"
+    name: Delete Customer 1
+    meta:
+      id: req_ba5cfad479e84e7db95983c744dd82d7
+      created: 1761524819776
+      modified: 1762688344295
+      isPrivate: false
+      description: ""
+      sortKey: -1761524701405.5
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/1"
+    name: Delete Order 1
+    meta:
+      id: req_5c9a2b5819874d64a6046579bbce7a31
+      created: 1761524838034
+      modified: 1762697817145
+      isPrivate: false
+      description: ""
+      sortKey: -1761524656568.25
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1/orders"
+    name: Create Order 1
+    meta:
+      id: req_835bea8047154f8a8bedcd6b33cdbefa
+      created: 1761524858204
+      modified: 1762688049456
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146757.5
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 1,
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 1
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 1
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: Create Customer 1
+    meta:
+      id: req_e49ed341c4de41c7a7def1fe345b74b3
+      created: 1761524870745
+      modified: 1762689649439
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146782.5
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Javier",
+        	"email": "javier.castilla101@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: Create Clean Code book
+    meta:
+      id: req_c52bac7e3a0a4f9ca74ea15b35983470
+      created: 1761524872619
+      modified: 1762725435068
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146845
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780132350884"
+        	},
+          "title": "Clean Code",
+          "author": "Robert C. Martin",
+          "publisher": "Prentice Hall",
+        	"stock": 100
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780132350884"
+    name: Edit Clean Code book
+    meta:
+      id: req_2250c22e8c2b40c081b9f1a49a36d422
+      created: 1761524901328
+      modified: 1762703659628
+      isPrivate: false
+      description: ""
+      sortKey: -1761554753325.996
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780132350884"
+        	},
+          "title": "'Clean Code",
+          "author": "Robert C. Martin",
+          "publisher": "Prentice Hall",
+        	"stock": 400
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1"
+    name: Edit Customer 1
+    meta:
+      id: req_822d8b18dfd14f04aa90350f51059c05
+      created: 1761524921894
+      modified: 1762697768976
+      isPrivate: false
+      description: ""
+      sortKey: -1761534778495.332
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Javier Castilla",
+        	"email": "javier.castilla101@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2/orders"
+    name: Create Order 2
+    meta:
+      id: req_fa7d6d4f79c04de28481f8708f3fac5d
+      created: 1762042243333
+      modified: 1762712386560
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146745
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 2,
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 10
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 50
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: Create Dora The Explorer book
+    meta:
+      id: req_fced5876fedf440bb5cadef4271b567a
+      created: 1762687111304
+      modified: 1762688512137
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146795
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780134685991"
+        	},
+          "title": "Dora the explorer",
+          "author": "Manolín",
+          "publisher": "Pepe S.L",
+        	"stock": 999
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: Create Customer 2
+    meta:
+      id: req_b461cdb320154909b0cb4b42844428b4
+      created: 1762687119262
+      modified: 1762689645958
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146776.25
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Axel",
+        	"email": "axel.cabrera@ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: Create Customer 3
+    meta:
+      id: req_5407de8f45694cb79c0918de37946352
+      created: 1762687127990
+      modified: 1762695027727
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146770
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Asmae",
+        	"email": "asmae.ez@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3/orders"
+    name: Create Order 3
+    meta:
+      id: req_08066e85908a4414a507518698541506
+      created: 1762687241916
+      modified: 1762712388886
+      isPrivate: false
+      description: ""
+      sortKey: -1761780468912.5
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 3,
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 10
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 1
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2/orders"
+    name: Customer 2 orders
+    meta:
+      id: req_2da6252dd0eb488e90c546eaf1d3d7be
+      created: 1762687520214
+      modified: 1762697745647
+      isPrivate: false
+      description: ""
+      sortKey: -1761620670267.1875
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3/orders"
+    name: Customer 3 orders
+    meta:
+      id: req_56f322515f2c4d08a38174a86597efa9
+      created: 1762687524219
+      modified: 1762697749592
+      isPrivate: false
+      description: ""
+      sortKey: -1761604690402.6562
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2"
+    name: Customer 2
+    meta:
+      id: req_b9a8d530186a4a1c9c9cc785d96f17ed
+      created: 1762687540238
+      modified: 1762697732708
+      isPrivate: false
+      description: ""
+      sortKey: -1761656624962.3828
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Customer 3
+    meta:
+      id: req_8a661e842bea4cdb9a97eb46e4c14b36
+      created: 1762687542655
+      modified: 1762697735916
+      isPrivate: false
+      description: ""
+      sortKey: -1761654627479.3164
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780134685991"
+    name: Dora The Explorer book
+    meta:
+      id: req_371bbce19a7f4db6a54a7511a187062c
+      created: 1762687560369
+      modified: 1762687560369
+      isPrivate: false
+      description: ""
+      sortKey: -1761662617411.582
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: Create duplicated Dora The Explorer ISBN book
+    meta:
+      id: req_d2c2ff2afee2452fb338ec010b299e29
+      created: 1762687661850
+      modified: 1762689265325
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146788.75
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780134685991"
+        	},
+          "title": "Head First Design Patterns",
+          "author": "Eric Freeman",
+          "publisher": "O’Reilly Media",
+        	"stock": 500
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: Create duplicated Customer 3 name
+    meta:
+      id: req_7052cf833d9842139a4f71c02140c438
+      created: 1762687720758
+      modified: 1762689698563
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146763.75
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Asmae",
+        	"email": "another.person@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: Create duplicated Customer 3 email
+    meta:
+      id: req_dcfb4fa437b145abb6f32462f630a03e
+      created: 1762687813334
+      modified: 1762695033885
+      isPrivate: false
+      description: ""
+      sortKey: -1762036146760.625
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Pepe",
+        	"email": "asmae.ez@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1/orders"
+    name: Create Order out of stock
+    meta:
+      id: req_4817b1c26a324d9abf75ea87e2c29a1a
+      created: 1762688083792
+      modified: 1762688091931
+      isPrivate: false
+      description: ""
+      sortKey: -1761748509183.4375
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 1,
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 1000
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 1000
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780134685991"
+    name: Delete Dora The Explorer book
+    meta:
+      id: req_e9c8cb7a22e244eaa7f95ad3e19bd421
+      created: 1762688304771
+      modified: 1762688884484
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647761.2656
+    method: DELETE
+    parameters:
+      - name: ""
+        value: ""
+        disabled: false
+        id: pair_6aaf5a8615254915a162ad40c1ebdaf5
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2"
+    name: Delete Customer 2 associated with orders
+    meta:
+      id: req_555be54b0b1e4f61aa7f741b8a7e5c12
+      created: 1762688337561
+      modified: 1762799316044
+      isPrivate: false
+      description: ""
+      sortKey: -1761524678986.875
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Delete Customer 3
+    meta:
+      id: req_1e4b768d3ad64bd4829e61fe6cd4e758
+      created: 1762688340047
+      modified: 1762688349001
+      isPrivate: false
+      description: ""
+      sortKey: -1761524667777.5625
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/2"
+    name: Delete Order 2
+    meta:
+      id: req_d4ba7c79ef2c448dbd5a62f086f2430b
+      created: 1762688360867
+      modified: 1762697819749
+      isPrivate: false
+      description: ""
+      sortKey: -1761524650963.5938
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/3"
+    name: Delete Order 3
+    meta:
+      id: req_a816b3e95bc048f2b28bc36c26aaea2f
+      created: 1762688364049
+      modified: 1762799228221
+      isPrivate: false
+      description: ""
+      sortKey: -1761524649524.9297
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1/orders/1"
+    name: Customer 1 orders 1
+    meta:
+      id: req_d2fc3a5d659643cc883644a5bf37f4f0
+      created: 1762688399960
+      modified: 1762697753878
+      isPrivate: false
+      description: ""
+      sortKey: -1761596700470.3906
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2/orders/2"
+    name: Customer 2 orders 2
+    meta:
+      id: req_8b4f8948aeef499994a3254d14f6ef96
+      created: 1762688411343
+      modified: 1762697757729
+      isPrivate: false
+      description: ""
+      sortKey: -1761592705504.2578
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2/orders/2"
+    name: Customer 3 orders 3
+    meta:
+      id: req_873eb90baddd4cdcbf1fe53a55e72ce7
+      created: 1762688421112
+      modified: 1762697760716
+      isPrivate: false
+      description: ""
+      sortKey: -1761590708021.1914
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780134685991"
+    name: Edit Dora The Explorer book
+    meta:
+      id: req_66bac4eee1f84d14a0ab7ddfd215276d
+      created: 1762688549109
+      modified: 1762688588092
+      isPrivate: false
+      description: ""
+      sortKey: -1761544765910.664
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780134685991"
+        	},
+          "title": "Dora the explorer",
+          "author": "Manolín",
+          "publisher": "Pepe S.L",
+        	"stock": 300
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2"
+    name: Edit Customer 2
+    meta:
+      id: req_2c104051950f44cbb8a00933b07e52a2
+      created: 1762688595792
+      modified: 1762697771348
+      isPrivate: false
+      description: ""
+      sortKey: -1761532281641.499
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Axel Cabrera",
+        	"email": "axel.cabrera@ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Edit Customer 3
+    meta:
+      id: req_65d07a1891a5476da0e3cdc98121fae7
+      created: 1762688598925
+      modified: 1762697774259
+      isPrivate: false
+      description: ""
+      sortKey: -1761531033214.5825
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Asmae Ez Zaim",
+        	"email": "asmae.zaim101@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/2"
+    name: Edit Order 2
+    meta:
+      id: req_df2f7e67df7f441bbffd6e5dade82d3b
+      created: 1762688791931
+      modified: 1762697780234
+      isPrivate: false
+      description: ""
+      sortKey: -1761527287933.833
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 2,
+        	"date": "2025-11-09T12:13:47.758501293",
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 10
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 100
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Delete Customer 3 does not exists
+    meta:
+      id: req_2252d274237a4acb919c1fd730b2a9ba
+      created: 1762688839723
+      modified: 1762799272275
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647898.7656
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780132350884"
+    name: Delete Clean Code book associated with orders
+    meta:
+      id: req_e36122e9a2b94a78953fda190b82ed24
+      created: 1762688876108
+      modified: 1762799328711
+      isPrivate: false
+      description: ""
+      sortKey: -1761524768661.375
+    method: DELETE
+    parameters:
+      - name: ""
+        value: ""
+        disabled: false
+        id: pair_6aaf5a8615254915a162ad40c1ebdaf5
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780134685991"
+    name: Delete Dora The Explorer book associated with orders
+    meta:
+      id: req_b55d6bbf9ea54a8a8549da86b1a8c8cf
+      created: 1762688878582
+      modified: 1762799336476
+      isPrivate: false
+      description: ""
+      sortKey: -1761524723824.125
+    method: DELETE
+    parameters:
+      - name: ""
+        value: ""
+        disabled: false
+        id: pair_6aaf5a8615254915a162ad40c1ebdaf5
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: All books
+    meta:
+      id: req_77ae07cdd5ef4a3bbd224f959bc21072
+      created: 1762688920102
+      modified: 1762688931203
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647661.2656
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: All customers
+    meta:
+      id: req_8f6d66a0c347422ca9573e5f6b0da30a
+      created: 1762688922868
+      modified: 1762688922868
+      isPrivate: false
+      description: ""
+      sortKey: -1761676599793.0469
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders"
+    name: All orders
+    meta:
+      id: req_d79cc6c1364a47a38ee16e9e3477b387
+      created: 1762688925196
+      modified: 1762697836543
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647461.2656
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/4"
+    name: Delete Customer 4
+    meta:
+      id: req_2e42bff100e34dfd93cd034b2201b01f
+      created: 1762690698076
+      modified: 1762713043693
+      isPrivate: false
+      description: ""
+      sortKey: -1761524662172.9062
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders"
+    name: All orders
+    meta:
+      id: req_821b010f0d6047b5a324bf6b5bef1dfd
+      created: 1762690844280
+      modified: 1762697789545
+      isPrivate: false
+      description: ""
+      sortKey: -1761525404084.1458
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/1"
+    name: Edit Order 1
+    meta:
+      id: req_372d69606d984e1e9727a026347a7990
+      created: 1762692414002
+      modified: 1762697776875
+      isPrivate: false
+      description: ""
+      sortKey: -1761529160574.2078
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 2,
+        	"date": "2025-11-09T12:13:47.758501293",
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 1
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 99
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/3"
+    name: Edit Order 3
+    meta:
+      id: req_e2c4a1dd57224d0eb850d2d5acf8b956
+      created: 1762693894327
+      modified: 1762697782881
+      isPrivate: false
+      description: ""
+      sortKey: -1761526346008.9893
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 2,
+        	"date": "2025-11-09T13:11:15.009290758",
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 10
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 1
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers"
+    name: All customers
+    meta:
+      id: req_743d37236f3b4efe828459aed8f02be6
+      created: 1762694377549
+      modified: 1762694385814
+      isPrivate: false
+      description: ""
+      sortKey: -1761525875046.5674
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books"
+    name: All books
+    meta:
+      id: req_9dd17433d53c48cc9d60e9389a403996
+      created: 1762694379548
+      modified: 1762694399178
+      isPrivate: false
+      description: ""
+      sortKey: -1761526110527.7783
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/10"
+    name: Customer 10 does not exists
+    meta:
+      id: req_fb0b76e5746b406fa34c19e031fa7b70
+      created: 1762712669735
+      modified: 1762712672812
+      isPrivate: false
+      description: ""
+      sortKey: -1761653628737.7832
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/1"
+    name: Delete Order 1 does not exists
+    meta:
+      id: req_01c03b3e64c54b8cada9fef974bff82d
+      created: 1762713096719
+      modified: 1762799210139
+      isPrivate: false
+      description: ""
+      sortKey: -1761524648086.2656
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/2"
+    name: Delete Order 2 does not exists
+    meta:
+      id: req_0afdfc248507465f982ef8dfafad677d
+      created: 1762713102301
+      modified: 1762799219897
+      isPrivate: false
+      description: ""
+      sortKey: -1761524648067.5156
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/3"
+    name: Delete Order 3 does not exists
+    meta:
+      id: req_5f3703d270574ed196581f066028b5c5
+      created: 1762799235180
+      modified: 1762799236818
+      isPrivate: false
+      description: ""
+      sortKey: -1761524648039.3906
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/1"
+    name: Delete Customer 1 does not exists
+    meta:
+      id: req_81dedd1e650d4e03890a7159bda508bd
+      created: 1762799252411
+      modified: 1762799269088
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647936.2656
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Delete Customer 4 does not exists
+    meta:
+      id: req_6ef8f989f113431dbe3f4cbce4c16a16
+      created: 1762799262719
+      modified: 1762799276683
+      isPrivate: false
+      description: ""
+      sortKey: -1761524647880.0156
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    authentication:
+      type: none
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/orders/4"
+    name: Edit Order 4 does not exists
+    meta:
+      id: req_3ff79da202094e0898a38880af37aac3
+      created: 1762799360951
+      modified: 1762799363720
+      isPrivate: false
+      description: ""
+      sortKey: -1761526228268.3838
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"customerId": 2,
+        	"date": "2025-11-09T13:11:15.009290758",
+        	"items": [
+        		{
+        			"isbn": {
+        				"value": "9780132350884"
+        			},
+        			"quantity": 10
+        		},
+        		{
+        			"isbn": {
+        				"value": "9780134685991"
+        			},
+        			"quantity": 1
+        		}
+        	]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/3"
+    name: Edit Customer 10 does not exists
+    meta:
+      id: req_f112f8cc7f39435ea5da915a32870311
+      created: 1762799374439
+      modified: 1762799374439
+      isPrivate: false
+      description: ""
+      sortKey: -1761530096894.395
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"name": "Asmae Ez Zaim",
+        	"email": "asmae.zaim101@alu.ulpgc.es"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780734685991"
+    name: Edit Books with non existing ISBN
+    meta:
+      id: req_26def933c7aa4171ad3ee60bae09978d
+      created: 1762799389586
+      modified: 1762800493143
+      isPrivate: false
+      description: ""
+      sortKey: -1761539772202.998
+    method: PUT
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "isbn": {
+        		"value": "9780134685991"
+        	},
+          "title": "Dora the explorer",
+          "author": "Manolín",
+          "publisher": "Pepe S.L",
+        	"stock": 300
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/10/orders"
+    name: Customer 10 does not exists orders
+    meta:
+      id: req_215e916c07e84c2b891dcfa8fd43cc2b
+      created: 1762799450438
+      modified: 1762799457006
+      isPrivate: false
+      description: ""
+      sortKey: -1761600695436.5234
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/customers/2/orders/10"
+    name: Customer 3 orders 10 does not exists
+    meta:
+      id: req_151a4a75096b4ddda4d879649aa5a41f
+      created: 1762799471762
+      modified: 1762799476153
+      isPrivate: false
+      description: ""
+      sortKey: -1761572730673.5938
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780034685991"
+    name: Delete book with non existing ISBN
+    meta:
+      id: req_0d73f5d95c2144ff9c13da299d99e194
+      created: 1762799767905
+      modified: 1762800550786
+      isPrivate: false
+      description: ""
+      sortKey: -1761524712614.8125
+    method: DELETE
+    parameters:
+      - name: ""
+        value: ""
+        disabled: false
+        id: pair_6aaf5a8615254915a162ad40c1ebdaf5
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{url}}/books/9780734685991"
+    name: Book with non existing ISBN
+    meta:
+      id: req_4b256f181827465d827ddba5f58c2cd0
+      created: 1762800431802
+      modified: 1762800442095
+      isPrivate: false
+      description: ""
+      sortKey: -1761661618670.0488
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.2.0
+      - name: x-api-key
+        value: "{{apiKey}}"
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_d6fdc678215b40fa9fe76b9606a7f66e
+    created: 1761404384111
+    modified: 1761404384111
+environments:
+  name: Base Environment
+  meta:
+    id: env_a83ab400aa924d4cb1aa3e1fc856844b
+    created: 1761404384109
+    modified: 1762800822809
+    isPrivate: false
+  data:
+    url: localhost:8080
+    apiKey: Pepe

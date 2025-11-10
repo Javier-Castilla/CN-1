@@ -1,8 +1,10 @@
 package software.ulpgc.es.monolith.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 import java.util.regex.Pattern;
-
 
 public final class ISBN {
 
@@ -11,7 +13,8 @@ public final class ISBN {
 
     private final String value;
 
-    public ISBN(String value) {
+    @JsonCreator
+    public ISBN(@JsonProperty("value") String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("ISBN cannot be empty.");
         }
